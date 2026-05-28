@@ -1,0 +1,285 @@
+/* Arquivo: recuperarSenha.module.css (VERSÃO FINAL COM CORREÇÃO DE ALTURA) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+  --bg: #1A0B35;
+  --text: #ffffff;
+  --muted: #b8b8c0;
+  --stroke: rgba(255, 255, 255, 0.15);
+  --card-bg: rgba(22, 16, 40, 0.6);
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --purple-logo: #7E22CE;
+  --purple-deep: #581C87;
+  --green-verified: #25d366;
+  --red-error: #ff4d4d;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* AQUI ESTÁ A CORREÇÃO */
+.wrapper {
+  width: 100%;
+  height: 100vh; /* <<< A CORREÇÃO: Usa 100% da altura da janela, garantindo que preencha tudo */
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg);
+
+  /* Centralização com Flexbox */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blob1, .blob2 {
+  position: absolute;
+  border-radius: 100%;
+  width: 400px;
+  filter: blur(50px);
+  z-index: 0;
+}
+
+.blob1 {
+  width: 250px;
+  height: 250px;
+  background: var(--purple-deep);
+  opacity: 0.4;
+  top: -50px;
+  left: -80px;
+}
+
+.blob2 {
+  width: 300px;
+  height: 300px;
+  background: var(--purple-logo);
+  opacity: 0.25;
+  bottom: -60px;
+  right: -100px;
+}
+
+.recuperar-card {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 450px;
+  background: var(--card-bg);
+  border: 1.5px solid var(--stroke);
+  border-radius: 24px;
+  backdrop-filter: blur(32px);
+  box-shadow: var(--shadow);
+  padding: 2.5rem;
+  box-sizing: border-box;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.mobile-logo {
+  display: block;
+  width: clamp(50px, 15vw, 60px);
+  margin: 0 auto 1rem;
+}
+
+.desktop-logo {
+  display: none;
+}
+
+.card-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-top: -1rem;
+  max-width: 35ch;
+  margin-inline: auto;
+}
+
+.card-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.input-group {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--stroke);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: all .2s ease;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: var(--purple-logo);
+  box-shadow: 0 0 0 3px rgba(126, 34, 206, 0.2);
+}
+
+.input-error {
+  border-color: var(--red-error) !important;
+}
+
+.error-message {
+  color: var(--red-error);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  margin-top: 8px;
+  animation: slideInError 0.3s ease-out;
+}
+
+.action-button {
+  width: 100%;
+  padding: 1rem;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #fff;
+  cursor: pointer;
+  background-color: var(--purple-logo);
+  transition: all .2s ease;
+  margin-top: 0.5rem;
+}
+
+.action-button:hover {
+  filter: brightness(1.15);
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.back-link {
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--muted);
+  margin-top: 1rem;
+}
+
+.back-link a {
+  color: var(--purple-logo);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.back-link a:hover {
+  text-decoration: underline;
+}
+
+.shake {
+  animation: shake 0.5s;
+}
+
+.success-animation {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  text-align: center;
+  gap: 1.5rem;
+  width: 100%;
+  animation: fade-in-success 0.5s forwards;
+}
+
+.checkmark {
+  width: 100px;
+  height: 100px;
+  animation: scale .3s ease-in-out .9s both;
+}
+
+.checkmark__circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke: var(--green-verified);
+  fill: transparent;
+  animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.recuperar-card.success .checkmark__circle {
+  fill: var(--green-verified);
+  transition: fill .4s ease-in-out .4s;
+}
+
+.checkmark__check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke: white;
+  stroke-width: 3;
+  animation: stroke .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards;
+}
+
+@keyframes slideInError {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@keyframes fade-in-success {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale {
+  0%, 100% { transform: none; }
+  50% { transform: scale3d(1.1, 1.1, 1); }
+}
+
+@keyframes stroke {
+  100% { stroke-dashoffset: 0; }
+}
+
+@media (min-width: 920px) {
+  .desktop-logo {
+    display: block;
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    width: clamp(60px, 5vw, 80px);
+    z-index: 100;
+  }
+}

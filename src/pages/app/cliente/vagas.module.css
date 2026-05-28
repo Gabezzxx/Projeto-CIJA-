@@ -1,0 +1,156 @@
+/* Container Principal Corrigido */
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0b0712;
+}
+
+/* Área de Conteúdo Geral */
+.content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 48px clamp(16px, 4vw, 60px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.header p {
+  color: #ffffff;
+  margin-top: 16px;
+}
+
+.loading {
+  font-size: 18px;
+}
+
+/* Grid de Vagas Responsivo */
+.vagasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+/* Cartão de Vagas */
+.card {
+  background-color: rgb(97, 32, 150);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  transition: 0.2s ease;
+  box-sizing: border-box;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.cardHeader h2 {
+  font-size: 22px;
+  color: #ffffff;
+}
+
+.cardBody {
+  margin-top: 16px;
+}
+
+.descricao {
+  color: #ffffff;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  font-weight: 500;
+  color: #ffffff;
+
+  margin-bottom: 20px;
+}
+
+.data {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.botao {
+  margin-top: auto; /* Empurra o botão sempre para o rodapé do card */
+  padding: 14px;
+
+  border: none;
+  border-radius: 10px;
+
+  background-color: #5D1AC9;
+  color: #ffffff;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+  width: 100%; /* Garante clique fácil no mobile */
+
+  transition: 0.2s;
+}
+
+.botao:hover {
+  background-color: #1d4ed8;
+}
+
+
+@media (max-width: 1024px) {
+  .container {
+    flex-direction: column; /* Alinha a barra de navegação/menu para o topo se necessário */
+  }
+  .content {
+    margin-left: 0;
+    width: 100%;
+    padding: 28px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 20px 16px;
+    padding-bottom: 60px;
+  }
+  .header h1 {
+    font-size: 26px;
+  }
+  .vagasGrid {
+    grid-template-columns: 1fr; /* Força uma coluna única em telas de celular */
+    gap: 16px;
+  }
+  .card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  .cardHeader h2 {
+    font-size: 20px;
+  }
+  .header {
+    margin-top: 60px; /* Espaço extra no mobile para não cobrir o título */
+  }
+}
+
+@media (max-width: 480px) {
+  .header h1 {
+    font-size: 22px;
+  }
+}

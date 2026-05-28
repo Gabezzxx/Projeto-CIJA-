@@ -1,0 +1,59 @@
+/* Arquivo: src/components/Layout/Layout.module.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+  --bg: #1A0B35;
+  --purple-logo: #7E22CE;
+  --purple-deep: #581C87;
+}
+
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg);
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* O container do layout que segura tudo */
+.layout {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* As bolhas, agora globais */
+.background-blobs {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.background-blobs > div {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+  animation: pulse 25s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+}
+
+.purple-blob-1 {
+  width: 40vw; height: 40vw; min-width: 350px;
+  background: var(--purple-deep); opacity: 0.5;
+  top: -10%; left: -15%;
+  animation-duration: 22s;
+}
+
+.purple-blob-2 {
+  width: 50vw; height: 50vw; min-width: 400px;
+  background: var(--purple-logo); opacity: 0.3;
+  bottom: -15%; right: -20%;
+}
+
+@keyframes pulse {
+  from { transform: scale(1) rotate(0deg); }
+  to { transform: scale(1.2) rotate(15deg); }
+}

@@ -1,0 +1,273 @@
+/* ESTRUTURA GLOBAL */
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #0b0712;
+  color: white;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* CONTEÚDO PRINCIPAL (Respeita a Sidebar) */
+.mainContent {
+  flex: 1;
+  margin-left: 280px; /* Largura da sua Sidebar */
+  padding: 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+/* HEADER - Perfil à direita e Título à esquerda */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Garante que tudo fique alinhado ao topo */
+  margin-bottom: 40px;
+  width: 100%;
+}
+
+.welcomeText h1 {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+  margin: 0;
+}
+
+.welcomeText p {
+  color: #94a3b8;
+  margin: 5px 0 0;
+}
+
+/* CONTAINER DO PERFIL */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 15px;
+  border-radius: 50px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profileText {
+  text-align: right;
+}
+
+.userName {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.userType {
+  font-size: 10px;
+  color: #a855f7;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.avatarWrapper {
+  position: relative;
+}
+
+.avatarWrapper img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #a855f7;
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: 2px;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid #0b0712;
+}
+
+/* SEÇÃO HERO (Currículo + Dicas) */
+.heroSection {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.curriculoCard, .tipsCard {
+  background: #161225;
+  border-radius: 20px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progressData {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.percentage {
+  font-size: 48px;
+  font-weight: 900;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid;
+}
+
+.progressBar {
+  height: 12px;
+  background: #26203b;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  transition: width 0.7s ease-in-out;
+}
+
+.btnAction {
+  padding: 14px 30px;
+  background: #7e22ce;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btnAction:hover {
+  background: #9333ea;
+}
+
+/* LISTA DE DICAS */
+.tipsList {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.tipsList li {
+  display: flex;
+  gap: 10px;
+  color: #cbd5e1;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+}
+
+.tipsList span {
+  color: #a855f7;
+  font-weight: 900;
+}
+
+/* GRID DE ESTATÍSTICAS */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.statItem {
+  background: #161225;
+  padding: 25px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.statItem h2 {
+  font-size: 36px;
+  font-weight: 900;
+  margin: 10px 0 5px;
+}
+
+/* BOTÃO DE CHAT (FAB) */
+.floatingChat {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 65px;
+  height: 65px;
+  background: #7e22ce;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  z-index: 999;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #0b0712;
+}
+
+/* RESPONSIVIDADE MOBILE */
+@media (max-width: 1024px) {
+  .mainContent {
+    margin-left: 80px; /* Sidebar reduzida */
+    padding: 30px;
+  }
+  .heroSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 90px 20px 40px; /* Espaço para o menu sanduíche */
+  }
+
+  .header {
+    align-items: flex-start; /* PERFIL MAIS PARA CIMA */
+    gap: 10px;
+  }
+
+  .welcomeText {
+    max-width: 65%;
+  }
+
+  .profileText {
+    display: none; /* Esconde nome no mobile para ganhar espaço */
+  }
+
+  .userProfile {
+    padding: 5px;
+    background: transparent;
+    border: none;
+  }
+
+  .avatarWrapper img {
+    width: 45px;
+    height: 45px;
+  }
+}

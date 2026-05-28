@@ -1,0 +1,847 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #07010f;
+
+  --card: rgba(18, 10, 34, 0.88);
+
+  --white: #ffffff;
+  --muted: #9f9fb4;
+
+  --purple: #8b2cf5;
+  --purple-light: #a855f7;
+  --purple-dark: #4c1d95;
+
+  --green: #22c55e;
+  --danger: #ff4d4d;
+
+  --border: rgba(255, 255, 255, 0.06);
+
+  --shadow: 0 25px 80px rgba(0, 0, 0, 0.65);
+
+  --input: rgba(255, 255, 255, 0.035);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  background: var(--bg);
+  overflow-x: hidden;
+  color: white;
+}
+
+/* =========================================
+   WRAPPER
+========================================= */
+
+.wrapper {
+  position: relative;
+
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px 24px;
+
+  overflow: hidden;
+}
+
+/* =========================================
+   BACKGROUND
+========================================= */
+
+.backgroundBlobs {
+  position: fixed;
+  inset: 0;
+
+  overflow: hidden;
+
+  z-index: 0;
+
+  pointer-events: none;
+}
+
+.blobTop {
+  position: absolute;
+
+  top: 600px;
+  right: -180px;
+
+  width: 520px;
+  height: 520px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(139, 44, 245, 0.3) 0%,
+    rgba(139, 44, 245, 0.12) 65%,
+    transparent 75%
+  );
+
+  filter: blur(90px);
+}
+
+.blobBottom {
+  position: absolute;
+
+  bottom: 500px;
+  left: -170px;
+
+  width: 620px;
+  height: 620px;
+ 
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(91, 33, 182, 0.25) 0%,
+    rgba(91, 33, 182, 0.1) 60%,
+    transparent 75%
+  );
+  background: radial-gradient(
+    circle,
+    rgba(91, 33, 182, 0.25) 0%,
+    rgba(91, 33, 182, 0.1) 50%,
+    transparent 75%
+  );
+
+  filter: blur(90px);
+}
+
+/* =========================================
+   LOGO
+========================================= */
+
+.desktopLogo {
+  position: fixed;
+
+  top: 28px;
+  left: 28px;
+
+  width: 72px;
+
+  z-index: 50;
+}
+
+.mobileLogo {
+  display: none;
+}
+
+/* =========================================
+   ALERT
+========================================= */
+
+.alert {
+  position: fixed;
+
+  top: 24px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: min(92%, 420px);
+
+  padding: 15px 18px;
+
+  border-radius: 16px;
+
+  background: var(--danger);
+
+  color: white;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  text-align: center;
+
+  z-index: 999;
+
+  box-shadow: 0 12px 40px rgba(255, 77, 77, 0.35);
+
+  animation: fadeDown 0.35s ease;
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* =========================================
+   CONTAINER
+========================================= */
+
+.loginContainer {
+  width: 100%;
+  max-width: 1500px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 80px;
+
+  position: relative;
+  z-index: 2;
+
+  padding-inline: 60px;
+}
+
+/* =========================================
+   LEFT
+========================================= */
+
+.left {
+  flex: 1;
+
+  width: 100%;
+  max-width: 760px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  position: relative;
+  z-index: 2;
+}
+
+.left h1 {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  font-size: clamp(5.7rem, 8vw, 9rem);
+
+  line-height: 0.92;
+
+  font-weight: 800;
+
+  letter-spacing: -4px;
+
+  color: white;
+
+  text-align: left;
+
+  white-space: normal;
+
+  overflow-wrap: break-word;
+
+  word-break: normal;
+
+  text-shadow: 0 10px 35px rgba(118, 29, 219, 0.14);
+
+
+}
+
+.titleTop {
+  display: block;
+}
+
+.titleBottom {
+  display: flex;
+  align-items: baseline;
+
+  gap: 0.5rem;
+
+  flex-wrap: wrap;
+}
+
+.titleHighlight {
+  position: relative;
+
+  display: inline-block;
+
+  padding-bottom: 10px;
+
+  background: linear-gradient(180deg, #d8b4fe 0%, #a855f7 50%, #7e22ce 100%);
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 10px rgba(139, 47, 224, 0.25),
+    0 0 20px rgba(126, 34, 206, 0.18);
+
+    
+}
+
+.titleHighlight::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 4px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(90deg, #9333ea, #7e22ce);
+}
+
+.titleExclamation {
+  color: white;
+
+  -webkit-text-fill-color: white;
+}
+
+.tagline {
+  margin-top: 30px;
+
+  max-width: 560px;
+
+  color: #9f9fb4;
+
+  font-size: 1.05rem;
+
+  line-height: 1.9;
+
+  text-align: left;
+}
+
+/* =========================================
+   CARD
+========================================= */
+
+.loginCard {
+  position: relative;
+
+  width: 100%;
+  max-width: 470px;
+
+  height: 760px;
+
+  border-radius: 30px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(22, 10, 40, 0.92) 0%,
+    rgba(12, 5, 24, 0.96) 100%
+  );
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  backdrop-filter: blur(30px);
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.65),
+    0 0 40px rgba(147, 51, 234, 0.08);
+
+  padding: 30px 24px;
+
+  overflow: hidden;
+
+  z-index: 3;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.loginCard::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.04),
+    transparent 40%
+  );
+
+  pointer-events: none;
+}
+
+.cardContent {
+  width: 100%;
+  height: 100%;
+
+  overflow-y: auto;
+
+  padding-right: 6px;
+}
+
+/* =========================================
+   SCROLL
+========================================= */
+
+.cardContent::-webkit-scrollbar {
+  width: 7px;
+}
+
+.cardContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cardContent::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4b098a, #6d28d9);
+
+  border-radius: 20px;
+}
+
+.cardContent h2 {
+  font-size: 2.3rem;
+
+  font-weight: 700;
+
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+/* =========================================
+   FORM
+========================================= */
+
+form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 15px;
+}
+
+.inputGroup {
+  width: 100%;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  height: 60px;
+
+  border-radius: 18px;
+
+  border: 1px solid var(--border);
+
+  background: var(--input);
+
+  padding: 0 18px;
+
+  color: white;
+
+  font-size: 0.97rem;
+
+  outline: none;
+
+  transition: 0.25s ease;
+}
+
+.input::placeholder {
+  color: #67677d;
+}
+
+.input:focus {
+  border-color: var(--purple);
+
+  background: rgba(255, 255, 255, 0.04);
+
+  box-shadow: 0 0 0 4px rgba(139, 44, 245, 0.13);
+}
+
+/* =========================================
+   DATE INPUT
+========================================= */
+
+.dateInput {
+  color: white;
+}
+
+.dateInput::-webkit-datetime-edit {
+  color: white;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* =========================================
+   CHECK
+========================================= */
+
+.inputCheckWrapper {
+  position: absolute;
+
+  top: 50%;
+  right: 16px;
+
+  transform: translateY(-50%);
+
+  width: 23px;
+  height: 23px;
+
+  border-radius: 50%;
+
+  background: var(--green);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animatedCheck {
+  width: 13px;
+  height: 13px;
+}
+
+/* =========================================
+   PASSWORD
+========================================= */
+
+.senhaBox {
+  position: relative;
+}
+
+.toggleSenha {
+  position: absolute;
+
+  top: 8px;
+  right: 0;
+
+  width: 58px;
+  height: 70%;
+
+  border: none;
+  background: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  color: #9595ad;
+}
+
+.toggleSenha:hover {
+  color: white;
+}
+
+/* =========================================
+   VALIDATION
+========================================= */
+
+.passwordValidation {
+  margin-top: 12px;
+
+  border-radius: 18px;
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  background: rgba(255, 255, 255, 0.025);
+
+  padding: 16px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.validationItem {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  font-size: 0.88rem;
+}
+
+.validationIcon {
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.validationDot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #66667b;
+}
+
+.valid {
+  color: #d1fae5;
+}
+
+.invalid {
+  color: #77778c;
+}
+
+/* =========================================
+   BUTTON
+========================================= */
+
+.actionButton {
+  width: 100%;
+  height: 60px;
+
+  margin-top: 8px;
+
+  border: none;
+
+  border-radius: 18px;
+
+  background: linear-gradient(135deg, #7e22ce, #9333ea);
+
+  color: white;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+
+  box-shadow: 0 14px 34px rgba(126, 34, 206, 0.3);
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+
+  filter: brightness(1.05);
+}
+
+.actionButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.footerActions {
+  margin-top: 24px;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  color: #707087;
+
+  font-size: 0.85rem;
+}
+
+.separator::before,
+.separator::after {
+  content: "";
+
+  flex: 1;
+  height: 1px;
+
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.subLink {
+  margin-top: 16px;
+
+  text-align: center;
+
+  color: var(--muted);
+
+  font-size: 0.92rem;
+}
+
+.subLink a {
+  margin-left: 6px;
+
+  color: var(--purple-light);
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+/* =========================================
+   ERROR
+========================================= */
+
+.error {
+  border-color: var(--danger) !important;
+}
+
+.errorMessage {
+  margin-top: 8px;
+
+  margin-left: 4px;
+
+  color: var(--danger);
+
+  font-size: 0.82rem;
+}
+
+/* =========================================
+   SUCCESS
+========================================= */
+
+.successAnimation {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 30px;
+
+  background: rgba(10, 6, 18, 0.96);
+
+  backdrop-filter: blur(20px);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1200px) {
+  .loginContainer {
+    flex-direction: column;
+
+    justify-content: center;
+
+    gap: 50px;
+
+    padding-inline: 20px;
+  }
+
+  .left {
+    align-items: center;
+
+    max-width: 100%;
+  }
+
+  .left h1 {
+    text-align: center;
+
+    align-items: center;
+
+    font-size: clamp(3rem, 8vw, 6rem);
+  }
+
+  .titleBottom {
+    justify-content: center;
+  }
+
+  .tagline {
+    text-align: center;
+  }
+
+  .desktopLogo {
+    display: none;
+  }
+
+  .mobileLogo {
+    display: block;
+
+    width: 74px;
+
+    margin: 0 auto 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 24px 16px;
+  }
+
+  .left h1 {
+    font-size: clamp(2.5rem, 10vw, 4.5rem);
+
+    line-height: 1;
+
+    letter-spacing: -2px;
+  }
+
+  .tagline {
+    font-size: 0.95rem;
+
+    line-height: 1.7;
+  }
+
+  .loginCard {
+    height: auto;
+
+    min-height: 88vh;
+
+    max-width: 100%;
+  }
+
+  .blobTop {
+    width: 320px;
+    height: 320px;
+  }
+
+  .blobBottom {
+    width: 360px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 480px) {
+  .left h1 {
+    font-size: clamp(2rem, 11vw, 3.4rem);
+
+    letter-spacing: -1px;
+  }
+
+  .tagline {
+    font-size: 0.9rem;
+  }
+
+  .loginCard {
+    padding: 22px 16px;
+  }
+
+  .input {
+    height: 56px;
+
+    font-size: 16px;
+  }
+
+  .actionButton {
+    height: 56px;
+  }
+}

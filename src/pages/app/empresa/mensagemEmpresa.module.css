@@ -1,0 +1,113 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0c0b14; /* Cor de fundo escura idêntica ao seu projeto */
+  font-family: sans-serif;
+}
+
+.main {
+  flex: 1;
+  /* IMPORTANTE: Ajuste este valor se a sua barra lateral for mais larga ou mais estreita */
+  margin-left: 260px; 
+  padding: 3rem 2rem;
+  box-sizing: border-box;
+}
+
+.headerArea {
+  margin-bottom: 2.5rem;
+}
+
+.headerArea h1 {
+  color: #ffffff;
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.headerArea p {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.loading {
+  color: #a855f7;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.semCandidatos {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+/* Grid para organizar os cards de candidatos */
+.candidatosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Estilo do Card do Candidato */
+.cardCandidato {
+  background-color: #131129;
+  border: 1px solid #262147;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.cardCandidato:hover {
+  transform: translateY(-4px);
+  border-color: #a855f7;
+}
+
+.cardHeader h2 {
+  color: #a855f7;
+  font-size: 1.25rem;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.cardBody {
+  color: #f1f5f9;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.cardBody p {
+  margin: 0.4rem 0;
+}
+
+.cardBody strong {
+  color: #94a3b8;
+}
+
+.dataTag {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 1rem;
+}
+
+/* Botão roxo customizado */
+.btnVerCurriculo {
+  background-color: #a855f7;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.btnVerCurriculo:hover {
+  background-color: #9333ea;
+}

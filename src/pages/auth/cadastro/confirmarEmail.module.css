@@ -1,0 +1,651 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg: #0a0614;
+
+  --purple: #8b2cf5;
+  --purple-light: #a855f7;
+  --purple-dark: #581c87;
+
+  --white: #ffffff;
+  --muted: #9f9fb4;
+
+  --card: rgba(18, 10, 34, 0.9);
+
+  --border: rgba(255, 255, 255, 0.06);
+
+  --input: rgba(255, 255, 255, 0.04);
+
+  --success: #22c55e;
+  --danger: #ff4d4d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+/* =========================================
+   WRAPPER
+========================================= */
+
+.wrapper {
+  position: relative;
+
+  width: 100%;
+  min-height: 100vh;
+
+  overflow: hidden;
+
+  background: var(--bg);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+}
+
+/* =========================================
+   BACKGROUND
+========================================= */
+
+.backgroundBlobs {
+  position: fixed;
+  inset: 0;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+.blobTop {
+  position: absolute;
+
+  top: -180px;
+  left: -140px;
+
+  width: 520px;
+  height: 520px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(139, 44, 245, 0.28) 0%,
+    rgba(139, 44, 245, 0.14) 40%,
+    transparent 75%
+  );
+
+  filter: blur(90px);
+}
+
+.blobBottom {
+  position: absolute;
+
+  right: -180px;
+  bottom: -200px;
+
+  width: 560px;
+  height: 560px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(91, 33, 182, 0.22) 0%,
+    rgba(91, 33, 182, 0.1) 45%,
+    transparent 75%
+  );
+
+  filter: blur(100px);
+}
+
+/* =========================================
+   LOGO
+========================================= */
+
+.desktopLogo {
+  position: fixed;
+
+  top: 30px;
+  left: 30px;
+
+  width: 72px;
+
+  z-index: 20;
+}
+
+.mobileLogo {
+  display: none;
+}
+
+/* =========================================
+   CONTAINER
+========================================= */
+
+.container {
+  position: relative;
+  z-index: 5;
+
+  width: 100%;
+  max-width: 1250px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 80px;
+}
+
+/* =========================================
+   LEFT
+========================================= */
+
+.leftContent {
+  flex: 1;
+
+  max-width: 580px;
+}
+
+.leftContent h1 {
+  font-size: clamp(3.8rem, 7vw, 7rem);
+
+  line-height: 0.95;
+
+  font-weight: 800;
+
+  letter-spacing: -3px;
+
+  color: white;
+
+  margin-bottom: 24px;
+}
+
+.leftContent h1 span {
+  background: linear-gradient(180deg, #d8b4fe 0%, #a855f7 50%, #7e22ce 100%);
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow: 0 0 24px rgba(139, 44, 245, 0.25);
+}
+
+.subtitle {
+  color: var(--muted);
+
+  font-size: 1.05rem;
+
+  line-height: 1.8;
+
+  max-width: 500px;
+}
+
+/* =========================================
+   CARD
+========================================= */
+
+.card {
+  width: 100%;
+  max-width: 480px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(22, 10, 40, 0.94) 0%,
+    rgba(12, 5, 24, 0.98) 100%
+  );
+
+  border-radius: 30px;
+
+  padding: 38px 30px;
+
+  border: 1px solid var(--border);
+
+  backdrop-filter: blur(24px);
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(139, 44, 245, 0.12);
+
+  text-align: center;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.05),
+    transparent 40%
+  );
+
+  pointer-events: none;
+}
+
+.iconWrapper {
+  width: 82px;
+  height: 82px;
+
+  margin: 0 auto 24px;
+
+  border-radius: 50%;
+
+  background: rgba(139, 44, 245, 0.1);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(139, 44, 245, 0.2);
+}
+
+.mailIcon {
+  width: 38px;
+  height: 38px;
+
+  color: var(--purple-light);
+}
+
+.card h2 {
+  color: white;
+
+  font-size: 2rem;
+
+  margin-bottom: 10px;
+}
+
+.instruction {
+  color: var(--muted);
+
+  font-size: 0.95rem;
+
+  margin-bottom: 6px;
+}
+
+.emailText {
+  color: var(--purple-light);
+
+  font-weight: 600;
+
+  margin-bottom: 22px;
+
+  word-break: break-word;
+}
+
+/* =========================================
+   FEEDBACK
+========================================= */
+
+.feedbackMessage {
+  width: 100%;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  font-size: 0.92rem;
+
+  margin-bottom: 22px;
+
+  line-height: 1.5;
+}
+
+.success {
+  background: rgba(34, 197, 94, 0.12);
+
+  border: 1px solid rgba(34, 197, 94, 0.2);
+
+  color: #d1fae5;
+}
+
+.error {
+  background: rgba(255, 77, 77, 0.12);
+
+  border: 1px solid rgba(255, 77, 77, 0.2);
+
+  color: #ffd2d2;
+}
+
+/* =========================================
+   OTP
+========================================= */
+
+.otpForm {
+  width: 100%;
+}
+
+.otpInputGroup {
+  display: flex;
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-bottom: 24px;
+}
+
+.otpInput {
+  width: 58px;
+  height: 62px;
+
+  border-radius: 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: var(--input);
+
+  color: white;
+
+  font-size: 1.4rem;
+  font-weight: 700;
+
+  text-align: center;
+
+  outline: none;
+
+  transition: 0.25s ease;
+}
+
+.otpInput:focus {
+  border-color: var(--purple);
+
+  box-shadow: 0 0 0 4px rgba(139, 44, 245, 0.14);
+
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.inputError {
+  border-color: var(--danger) !important;
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+.actionButton {
+  width: 100%;
+  height: 58px;
+
+  border: none;
+
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, #7e22ce, #9333ea);
+
+  color: white;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+
+  box-shadow: 0 14px 35px rgba(126, 34, 206, 0.3);
+}
+
+.actionButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  filter: brightness(1.05);
+}
+
+.actionButton:disabled {
+  opacity: 0.7;
+
+  cursor: not-allowed;
+}
+
+.actionSection {
+  margin-top: 20px;
+}
+
+.resendButton {
+  background: transparent;
+
+  border: none;
+
+  color: var(--purple-light);
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.resendButton:hover {
+  color: white;
+}
+
+.timerBox {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  color: var(--muted);
+
+  font-size: 0.9rem;
+}
+
+.countdown {
+  color: white;
+
+  font-weight: 700;
+}
+
+.footer {
+  margin-top: 30px;
+
+  padding-top: 24px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.backButton {
+  border: none;
+
+  background: transparent;
+
+  color: var(--muted);
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.backButton:hover {
+  color: white;
+}
+
+/* =========================================
+   SUCCESS
+========================================= */
+
+.successAnimation {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.successAnimation h2 {
+  margin-top: 10px;
+
+  color: white;
+}
+
+.successAnimation p {
+  color: var(--muted);
+
+  margin-top: 10px;
+
+  line-height: 1.6;
+}
+
+.checkmark {
+  width: 100px;
+  height: 100px;
+}
+
+.checkmarkCircle {
+  stroke: var(--success);
+
+  stroke-width: 3;
+
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+
+  animation: stroke 0.6s forwards;
+}
+
+.checkmarkCheck {
+  stroke: white;
+
+  stroke-width: 4;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+
+  animation: stroke 0.35s 0.55s forwards;
+}
+
+@keyframes stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+  .container {
+    flex-direction: column;
+
+    text-align: center;
+
+    gap: 50px;
+  }
+
+  .leftContent {
+    max-width: 100%;
+  }
+
+  .subtitle {
+    margin: 0 auto;
+  }
+
+  .desktopLogo {
+    display: none;
+  }
+
+  .mobileLogo {
+    display: block;
+
+    width: 72px;
+
+    margin: 0 auto 26px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 20px 16px;
+  }
+
+  .leftContent h1 {
+    font-size: clamp(3rem, 14vw, 5rem);
+  }
+
+  .card {
+    padding: 30px 22px;
+  }
+
+  .otpInput {
+    width: 52px;
+    height: 56px;
+
+    font-size: 1.2rem;
+  }
+
+  .blobTop {
+    width: 320px;
+    height: 320px;
+  }
+
+  .blobBottom {
+    width: 360px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 480px) {
+  .leftContent h1 {
+    font-size: clamp(2.6rem, 13vw, 4rem);
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .card {
+    padding: 26px 16px;
+
+    border-radius: 24px;
+  }
+
+  .card h2 {
+    font-size: 1.7rem;
+  }
+
+  .otpInputGroup {
+    gap: 6px;
+  }
+
+  .otpInput {
+    width: 46px;
+    height: 50px;
+
+    border-radius: 12px;
+
+    font-size: 1rem;
+  }
+
+  .actionButton {
+    height: 54px;
+  }
+
+  .blobTop {
+    top: -120px;
+    left: -120px;
+
+    width: 260px;
+    height: 260px;
+  }
+
+  .blobBottom {
+    right: -140px;
+    bottom: -160px;
+
+    width: 280px;
+    height: 280px;
+  }
+}
