@@ -1,401 +1,416 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../../../components/sideBar/sideBar";
-import React, { useEffect, useState } from "react";
-import styles from "./perfil.module.css";
 import { supabase } from "supabaseClient";
-import { validarTelefone } from "../../../utils/validations/cadastroValidation";
-import { formatarTelefone } from "../../../utils/validations/formatter";
+import styles from "./perfil.module.css";
 
-const Perfil: React.FC = () => {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const [editandoDados, setEditandoDados] = useState(false);
-  const [editandoCurriculo, setEditandoCurriculo] = useState(false);
-  const [erro, setErro] = useState({ nome: "", telefone: "", endereco: "" });
-
-  const [dadosOriginais, setDadosOriginais] = useState({
+export default function Perfil() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [uid, setUid] = useState<string | null>(null);
+  const [profile, setProfile] = useState({
     nome: "",
-    telefone: "",
-    endereco: "",
     email: "",
-    data_nasc: "",
+    tel: "",
+    cidade: "São Paulo, Brasil",
+    avatar: "",
+    titulo: "Jovem Aprendiz",
   });
-  const [dados, setDados] = useState({
-    nome: "",
-    telefone: "",
-    endereco: "",
-    email: "",
-    data_nasc: "",
-  });
-
-  const [curriculoOriginal, setCurriculoOriginal] = useState({
-    descricao: "",
-    competencias: "",
-    experiencias: "",
-    curso: "",
-  });
-  const [curriculo, setCurriculo] = useState({
-    descricao: "",
-    competencias: "",
-    experiencias: "",
-    curso: "",
-  });
-
-  const formatDate = (d: string) => {
-    if (!d) return "-";
-    const [y, m, day] = d.split("-");
-    if (!y || !m || !day) return d;
-
-    let year = y;
-    if (year.startsWith("00")) year = "20" + year.slice(2);
-
-    const meses = [
-      "janeiro",
-      "fevereiro",
-      "março",
-      "abril",
-      "maio",
-      "junho",
-      "julho",
-      "agosto",
-      "setembro",
-      "outubro",
-      "novembro",
-      "dezembro",
-    ];
-    return `${parseInt(day)} de ${meses[parseInt(m) - 1]} de ${year}`;
-  };
+  const [cv, setCv] = useState({ desc: "", comp: "", exp: "{}", cur: "[]" });
+  const [editing, setEditing] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [avatarVersion, setAvatarVersion] = useState(0);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-      const uid = userData.user.id;
-      setUserId(uid);
-
-      const { data: perfil } = await supabase
-        .from("jovem_aprendiz")
-        .select("nome, telefone, endereco, email, data_nasc, avatar_url")
-        .eq("id_ja", uid)
-        .single();
-      if (perfil) {
-        const telefoneLimpo = perfil.telefone?.replace("+55", "") || "";
-        const dadosFormatados = { ...perfil, telefone: telefoneLimpo };
-        setDados(dadosFormatados);
-        setDadosOriginais(dadosFormatados);
-
-        // OTIMIZAÇÃO  FEITA AGORA:  Quebra de cache no carregamento inicial da página para n bugar a foto
-        if (perfil.avatar_url) {
-          setAvatarUrl(`${perfil.avatar_url}?t=${Date.now()}`);
-        }
-      }
-
-      const { data: curriculoData } = await supabase
-        .from("curriculo")
-        .select("*")
-        .eq("id_ja", uid)
-        .single();
-      if (curriculoData) {
-        setCurriculo(curriculoData);
-        setCurriculoOriginal(curriculoData);
-      }
-    };
-    fetchData();
+    init();
   }, []);
 
-  const resizeImage = (file: File, size = 400): Promise<Blob> =>
-    new Promise((resolve, reject) => {
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = (e) => (img.src = e.target?.result as string);
-      img.onload = () => {
-        const min = Math.min(img.width, img.height);
-        const sx = (img.width - min) / 2;
-        const sy = (img.height - min) / 2;
-        const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-        canvas.toBlob((b) => (b ? resolve(b) : reject()), "image/jpeg", 0.92);
-      };
-      reader.readAsDataURL(file);
-    });
+  const init = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setUid(user.id);
+    await loadProfile(user.id, user.email || "");
+  };
 
-  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !userId) return;
-    setUploading(true);
+  const loadProfile = async (userId: string, userEmail: string) => {
     try {
-      const blob = await resizeImage(e.target.files[0], 400);
-      const filePath = `${userId}/avatar.jpg`;
+      const [p, c] = await Promise.all([
+        supabase.from("jovem_aprendiz").select("*").eq("id_ja", userId).maybeSingle(),
+        supabase.from("curriculo").select("*").eq("id_ja", userId).maybeSingle(),
+      ]);
 
-      await supabase.storage
-        .from("avatars")
-        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
-      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      // PEGA FOTO DO BANCO (testa todos os campos possíveis)
+      let avatarUrl = "";
+      if (p.data) {
+        avatarUrl = p.data.avatar_url || p.data.avatar || p.data.foto || p.data.photo_url || "";
 
-      await supabase
-        .from("jovem_aprendiz")
-        .update({ avatar_url: data.publicUrl })
-        .eq("id_ja", userId);
+        // Se não tem no banco, tenta buscar no storage direto
+        if (!avatarUrl) {
+          const { data: storageData } = supabase.storage.from("avatars").getPublicUrl(`${userId}/avatar.jpg`);
+          // Verifica se existe
+          try {
+            const res = await fetch(storageData.publicUrl, { method: 'HEAD', cache: 'no-store' });
+            if (res.ok) avatarUrl = storageData.publicUrl;
+          } catch {}
+        }
 
-      // OTIMIZAÇÃO: Atualiza com timestamp para forçar a renderização imediata na Vercel
-      setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`);
-    } catch (error) {
-      console.error("Erro ao fazer upload:", error);
+        setProfile({
+          nome: p.data.nome || "",
+          email: p.data.email || userEmail,
+          tel: (p.data.telefone || "").replace(/\D/g, ""),
+          cidade: p.data.cidade || p.data.endereco || "São Paulo, Brasil",
+          avatar: avatarUrl,
+          titulo: "Jovem Aprendiz",
+        });
+      }
+
+      if (c.data) {
+        setCv({
+          desc: c.data.descricao || "",
+          comp: c.data.competencias || "",
+          exp: c.data.experiencias || '{"experiencias":[]}',
+          cur: c.data.curso || "[]",
+        });
+        setSummary(c.data.descricao || "");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar:", err);
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
-  const validarNome = (nome: string) => {
-    const r = /^[A-Za-zÀ-ÿ\s]+$/;
-    if (!nome.trim() || nome.trim().split(/\s+/).length < 2)
-      return "Nome completo é obrigatório.";
-    if (!r.test(nome)) return "Nome inválido.";
-    return "";
+  const phone = (t: string) => {
+    const n = t.replace(/\D/g, "");
+    return n.length >= 10? `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7, 11)}` : t;
   };
 
-  const handleCancelarDados = () => {
-    setDados(dadosOriginais);
-    setErro({ nome: "", telefone: "", endereco: "" });
-    setEditandoDados(false);
-  };
+  const exp = useMemo(() => { try { return JSON.parse(cv.exp).experiencias || []; } catch { return []; } }, [cv.exp]);
+  const cur = useMemo(() => { try { return JSON.parse(cv.cur); } catch { return []; } }, [cv.cur]);
+  const skills = useMemo(() => cv.comp.split(",").map((s) => s.trim()).filter(Boolean), [cv.comp]);
+  const projs = useMemo(() => { try { return JSON.parse(cv.exp).projetos || []; } catch { return []; } }, [cv.exp]);
 
-  const handleCancelarCurriculo = () => {
-    setCurriculo(curriculoOriginal);
-    setEditandoCurriculo(false);
-  };
+  const pctData = useMemo(() => {
+    const details = {
+      avatar: { pts: 0, max: 15, done: false },
+      nome: { pts: 0, max: 5, done: false },
+      email: { pts: 0, max: 5, done: false },
+      tel: { pts: 0, max: 5, done: false },
+      desc: { pts: 0, max: 20, done: false, chars: 0 },
+      skills: { pts: 0, max: 15, done: false, count: 0 },
+      formacao: { pts: 0, max: 15, done: false, count: 0 },
+      experiencia: { pts: 0, max: 20, done: false, count: 0 },
+    };
 
-  const salvarDados = async () => {
-    if (!userId) return;
-    const n = validarNome(dados.nome);
-    const t = validarTelefone(dados.telefone) ? "" : "Telefone inválido.";
-    const e = !dados.endereco.trim() ? "Endereço obrigatório." : "";
-    setErro({ nome: n, telefone: t, endereco: e });
-    if (n || t || e) return;
+    if (profile.avatar) { details.avatar.pts = 15; details.avatar.done = true; }
+    if (profile.nome?.length > 3) { details.nome.pts = 5; details.nome.done = true; }
+    if (profile.email) { details.email.pts = 5; details.email.done = true; }
+    if (profile.tel?.length >= 10) { details.tel.pts = 5; details.tel.done = true; }
 
-    await supabase
+    const descLen = cv.desc?.trim().length || 0;
+    details.desc.chars = descLen;
+    if (descLen >= 100) { details.desc.pts = 20; details.desc.done = true; }
+    else if (descLen >= 50) { details.desc.pts = 15; }
+    else if (descLen >= 20) { details.desc.pts = 8; }
+    else if (descLen > 0) { details.desc.pts = 3; }
+
+    details.skills.count = skills.length;
+    details.skills.pts = Math.min(skills.length * 3, 15);
+    details.skills.done = skills.length >= 5;
+
+    details.formacao.count = cur.length;
+    if (cur.length >= 2) { details.formacao.pts = 15; details.formacao.done = true; }
+    else if (cur.length === 1) { details.formacao.pts = 10; }
+
+    details.experiencia.count = exp.length;
+    if (exp.length >= 2) { details.experiencia.pts = 20; details.experiencia.done = true; }
+    else if (exp.length === 1) { details.experiencia.pts = 12; }
+
+    const total = Object.values(details).reduce((sum, d) => sum + d.pts, 0);
+    return { percent: Math.min(total, 100), details };
+  }, [profile, cv, skills, exp, cur]);
+
+  const pct = pctData.percent;
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file ||!uid) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setProfile(p => ({...p, avatar: previewUrl }));
+
+    try {
+      // Converte para jpg 400x400
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = canvas.height = 400;
+          const ctx = canvas.getContext("2d")!;
+          const size = Math.min(img.width, img.height);
+          const x = (img.width - size) / 2;
+          const y = (img.height - size) / 2;
+          ctx.drawImage(img, x, y, size, size, 0, 0, 400, 400);
+          canvas.toBlob(b => b? resolve(b) : reject(), "image/jpeg", 0.9);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+
+      const filePath = `${uid}/avatar.jpg`;
+
+      // Remove antigo e faz upload
+      await supabase.storage.from("avatars").remove([filePath]);
+      const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, blob, { upsert: true, cacheControl: 'no-cache' });
+
+      if (uploadError) throw uploadError;
+
+      // Pega URL pública
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+
+      // Salva em TODOS os campos possíveis do banco
+      const { error: dbError } = await supabase
       .from("jovem_aprendiz")
       .update({
-        nome: dados.nome,
-        telefone: `+55${dados.telefone.replace(/\D/g, "")}`,
-        endereco: dados.endereco,
-      })
-      .eq("id_ja", userId);
+          avatar_url: publicUrl,
+          avatar: publicUrl,
+          foto: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+      .eq("id_ja", uid);
 
-    setDadosOriginais(dados);
-    setEditandoDados(false);
+      if (dbError) throw dbError;
+
+      // Atualiza na tela com cache bust
+      const finalUrl = `${publicUrl}?v=${Date.now()}`;
+      setProfile(p => ({...p, avatar: finalUrl }));
+      setAvatarVersion(v => v + 1);
+
+      // Recarrega do banco para confirmar
+      setTimeout(() => loadProfile(uid, profile.email), 1000);
+
+    } catch (err: any) {
+      console.error("Erro upload:", err);
+      alert("Erro ao enviar foto: " + err.message);
+      loadProfile(uid, profile.email); // Restaura
+    }
   };
 
-  const salvarCurriculo = async () => {
-    if (!userId) return;
-    await supabase.from("curriculo").upsert({ ...curriculo, id_ja: userId });
-    setCurriculoOriginal(curriculo);
-    setEditandoCurriculo(false);
+  const saveSummary = async () => {
+    if (!uid) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("curriculo").upsert({
+        id_ja: uid,
+        descricao: summary.trim(),
+        competencias: cv.comp,
+        experiencias: cv.exp,
+        curso: cv.cur,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "id_ja" });
+      if (error) throw error;
+      setCv(c => ({...c, desc: summary.trim() }));
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const descLen = summary.length;
+  const descInfo = useMemo(() => {
+    if (descLen === 0) return { text: "Escreva 20 caracteres para +8%", color: "#9CA3AF" };
+    if (descLen < 20) return { text: `Faltam ${20 - descLen} para +8%`, color: "#F59E0B" };
+    if (descLen < 50) return { text: `Faltam ${50 - descLen} para +7% (total 15%)`, color: "#F59E0B" };
+    if (descLen < 100) return { text: `Faltam ${100 - descLen} para +5% (total 20%)`, color: "#F59E0B" };
+    return { text: "✓ Máximo (+20%)", color: "#10B981" };
+  }, [descLen]);
+
+  if (loading) return (
+    <div className={styles.page}>
+      <Sidebar />
+      <main className={styles.main}><div style={{ padding: 40, color: '#9CA3AF' }}>Carregando perfil...</div></main>
+    </div>
+  );
+
+  const avatarSrc = profile.avatar
+  ? `${profile.avatar}${profile.avatar.includes('?')? '&' : '?'}v=${avatarVersion}`
+    : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop";
 
   return (
-    <div className={styles.container}>
+    <div className={styles.page}>
       <Sidebar />
-      <main className={styles.content}>
-        <div className={styles.profileHeader}>
-          <div className={styles.avatarWrapper}>
-            <img
-              src={
-                avatarUrl ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(dados.nome || "JA")}&background=7E22CE&color=fff`
-              }
-              alt="Foto"
-              className={styles.avatar}
-            />
-            <label className={styles.avatarEdit}>
-              {uploading ? "..." : "✏️"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={uploadAvatar}
-                hidden
-              />
-            </label>
+      <main className={styles.main}>
+        <div className={styles.topBar}>
+          <div className={styles.topText}>
+            <h1>Revise e complete seu currículo</h1>
+            <p>Mantenha suas informações atualizadas e aumente suas chances</p>
           </div>
-          <div>
-            <h1>{dados.nome || "Seu perfil"}</h1>
-            <p>{dados.email}</p>
-            <span className={styles.badge}>Jovem Aprendiz</span>
-          </div>
+          <button className={styles.editBtn} onClick={() => navigate("/curriculo")}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 2.12L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Editar currículo
+          </button>
         </div>
 
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2>Dados pessoais</h2>
-            {/* OTIMIZAÇÃO: Agora chama a função correta de cancelar para limpar estados */}
-            <button
-              className={styles.btnGhost}
-              onClick={
-                editandoDados
-                  ? handleCancelarDados
-                  : () => setEditandoDados(true)
-              }
-            >
-              {editandoDados ? "Cancelar" : "Editar"}
-            </button>
-          </div>
-          <div className={styles.grid3}>
-            <div className={styles.field}>
-              <label>NOME</label>
-              {editandoDados ? (
-                <input
-                  value={dados.nome}
-                  onChange={(e) => setDados({ ...dados, nome: e.target.value })}
-                />
-              ) : (
-                <p>{dados.nome}</p>
-              )}
-              {erro.nome && <span className={styles.err}>{erro.nome}</span>}
+        <div className={styles.grid}>
+          <section className={`${styles.card} ${styles.profileCard}`}>
+            <div className={styles.profileMain}>
+              <div className={styles.avatarBox}>
+                <img key={avatarVersion} src={avatarSrc} alt={profile.nome} />
+                <label className={styles.camBtn} title="Trocar foto">
+                  <input type="file" hidden accept="image/*" onChange={uploadAvatar} />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </label>
+              </div>
+              <div className={styles.profileInfo}>
+                <h2>{profile.nome || "Seu Nome"}</h2>
+                <span className={styles.tag}>{profile.titulo}</span>
+                <div className={styles.contacts}>
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 7l-10 5L2 7" />
+                    </svg>
+                    {profile.email}
+                  </span>
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0.7 2.81 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    {phone(profile.tel)}
+                  </span>
+                  <span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    {profile.cidade}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className={styles.field}>
-              <label>TELEFONE</label>
-              {editandoDados ? (
-                <input
-                  value={dados.telefone}
-                  onChange={(e) =>
-                    setDados({
-                      ...dados,
-                      telefone: formatarTelefone(e.target.value),
-                    })
-                  }
-                />
-              ) : (
-                <p>{dados.telefone}</p>
-              )}
-              {erro.telefone && (
-                <span className={styles.err}>{erro.telefone}</span>
-              )}
+            <div className={styles.progressWrap}>
+              <div className={styles.progressTop}>
+                <span>Perfil completo</span>
+                <strong style={{ color: pct >= 100? '#10B981' : '#7C3AED' }}>{pct}%</strong>
+              </div>
+              <div className={styles.progressBar}>
+                <div style={{ width: `${pct}%`, background: pct >= 100? '#10B981' : '#7C3AED', height: '100%', borderRadius: 4, transition: 'width 0.5s' }} />
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: '#9CA3AF', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                <div>Foto de perfil: {pctData.details.avatar.pts}/15  {pctData.details.avatar.done? 'Feito' : ''} </div>
+                <div>Sobre: {pctData.details.desc.pts}/20</div>
+                <div>Habilidades: {pctData.details.skills.pts}/15 </div>
+                <div>Formação: {pctData.details.formacao.pts}/15 </div>
+                <div>Experiências: {pctData.details.experiencia.pts}/20 </div>
+                <div>Base: 15/15</div>
+              </div>
             </div>
-            <div className={styles.field}>
-              <label>ENDEREÇO</label>
-              {editandoDados ? (
-                <input
-                  value={dados.endereco}
-                  onChange={(e) =>
-                    setDados({ ...dados, endereco: e.target.value })
-                  }
-                />
-              ) : (
-                <p>{dados.endereco}</p>
-              )}
-              {erro.endereco && (
-                <span className={styles.err}>{erro.endereco}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <label>EMAIL</label>
-              <p>{dados.email}</p>
-            </div>
-            <div className={styles.field}>
-              <label>NASCIMENTO</label>
-              <p>{formatDate(dados.data_nasc)}</p>
-            </div>
-          </div>
-          {editandoDados && (
-            <div className={styles.actions}>
-              <button className={styles.btnPrimary} onClick={salvarDados}>
-                Salvar dados
-              </button>
-            </div>
-          )}
-        </section>
+          </section>
 
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2>Currículo</h2>
-            {/* OTIMIZAÇÃO: Agora chama a função correta de cancelar para o currículo */}
-            <button
-              className={styles.btnGhost}
-              onClick={
-                editandoCurriculo
-                  ? handleCancelarCurriculo
-                  : () => setEditandoCurriculo(true)
-              }
-            >
-              {editandoCurriculo ? "Cancelar" : "Editar"}
-            </button>
-          </div>
-          {editandoCurriculo ? (
-            <div className={styles.formGrid}>
-              <div className={styles.fieldFull}>
-                <label>DESCRIÇÃO PROFISSIONAL</label>
-                <textarea
-                  rows={4}
-                  value={curriculo.descricao}
-                  onChange={(e) =>
-                    setCurriculo({ ...curriculo, descricao: e.target.value })
-                  }
-                  placeholder="Fale sobre você..."
-                />
-              </div>
-              <div className={styles.fieldFull}>
-                <label>COMPETÊNCIAS</label>
-                <textarea
-                  rows={3}
-                  value={curriculo.competencias}
-                  onChange={(e) =>
-                    setCurriculo({ ...curriculo, competencias: e.target.value })
-                  }
-                  placeholder="Ex: Excel, Comunicação..."
-                />
-              </div>
-              <div className={styles.fieldFull}>
-                <label>EXPERIÊNCIAS</label>
-                <textarea
-                  rows={3}
-                  value={curriculo.experiencias}
-                  onChange={(e) =>
-                    setCurriculo({ ...curriculo, experiencias: e.target.value })
-                  }
-                />
-              </div>
-              <div className={styles.fieldFull}>
-                <label>CURSO</label>
-                <input
-                  value={curriculo.curso}
-                  onChange={(e) =>
-                    setCurriculo({ ...curriculo, curso: e.target.value })
-                  }
-                />
-              </div>
-              <div className={styles.actions}>
-                <button className={styles.btnPrimary} onClick={salvarCurriculo}>
-                  Salvar currículo
-                </button>
-              </div>
+          <section className={`${styles.card} ${styles.aboutCard}`}>
+            <div className={styles.cardHeader}>
+              <h3>Sobre {editing && `(${descLen})`}</h3>
+              <button onClick={() => setEditing(!editing)} disabled={saving}>{editing? "Cancelar" : "Editar"}</button>
             </div>
-          ) : (
-            <div className={styles.cvGrid}>
-              <div className={styles.cvCard}>
-                <h4>Descrição</h4>
-                <p>{curriculo.descricao || "Adicione um resumo sobre você"}</p>
-              </div>
-              <div className={styles.cvCard}>
-                <h4>Competências</h4>
-                <p>{curriculo.competencias || "—"}</p>
-              </div>
-              <div className={styles.cvCard}>
-                <h4>Experiências</h4>
-                <p>{curriculo.experiencias || "—"}</p>
-              </div>
-              <div className={styles.cvCard}>
-                <h4>Curso</h4>
-                <p>{curriculo.curso || "—"}</p>
-              </div>
+            {editing? (
+              <>
+                <textarea value={summary} onChange={(e) => setSummary(e.target.value)} className={styles.textarea} placeholder="Fale sobre você..." rows={4} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                  <div style={{ fontSize: 12, color: descInfo.color, fontWeight: 500 }}>{descInfo.text}</div>
+                  <button className={styles.saveBtn} onClick={saveSummary} disabled={saving}>{saving? "Salvando..." : "Salvar"}</button>
+                </div>
+                <div style={{ height: 4, background: '#1a24', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(descLen, 100)}%`, background: descLen >= 100? '#10B981' : '#7C3AED', transition: 'width 0.2s' }} />
+                </div>
+              </>
+            ) : (
+              <p>{cv.desc || "Clique em Editar para adicionar um resumo..."}</p>
+            )}
+          </section>
+
+          <section className={`${styles.card} ${styles.eduCard}`}>
+            <div className={styles.cardHeader}>
+              <h3>Formação acadêmica</h3>
+              <button onClick={() => navigate("/curriculo")}>+ Adicionar</button>
             </div>
-          )}
-        </section>
+            {cur.length === 0? (
+              <p style={{ color: "#8A7AB8", fontSize: 13, textAlign: "center", padding: "20px 0" }}>Nenhuma formação</p>
+            ) : cur.map((c: any, i: number) => (
+              <div key={i} className={styles.itemRow}>
+                <div className={styles.itemIcon}>🎓</div>
+                <div><strong>{c.curso}</strong><p>{c.instituicao}</p><small>{c.inicio} {c.fim? `- ${c.fim}` : ""}</small></div>
+              </div>
+            ))}
+          </section>
+
+          <section className={`${styles.card} ${styles.skillsCard}`}>
+            <div className={styles.cardHeader}>
+              <h3>Competências</h3>
+              <button onClick={() => navigate("/curriculo")}>+ Adicionar</button>
+            </div>
+            <div className={styles.skillList}>
+              {skills.length > 0? skills.map((s, i) => <span key={i}>{s}</span>) : <span style={{ opacity: 0.5 }}>Nenhuma</span>}
+            </div>
+            <div className={styles.skillProgress}>
+              <div style={{ width: `${(pctData.details.skills.pts / 15) * 100}%` }} />
+            </div>
+            <small>{skills.length} de 5 • {pctData.details.skills.pts}/15 pts</small>
+          </section>
+
+          <section className={`${styles.card} ${styles.expCard}`}>
+            <div className={styles.cardHeader}>
+              <h3>Experiência</h3>
+              <button onClick={() => navigate("/curriculo")}>+ Adicionar</button>
+            </div>
+            {exp.length === 0? (
+              <p style={{ color: "#8A7AB8", fontSize: 13, textAlign: "center", padding: "20px 0" }}>Nenhuma experiência</p>
+            ) : exp.map((e: any, i: number) => (
+              <div key={i} className={styles.itemRow}>
+                <div className={styles.itemIcon}>💼</div>
+                <div><strong>{e.cargo}</strong><p>{e.empresa}</p><small>{e.inicio} {e.fim? `- ${e.fim}` : "- Atual"}</small>{e.descricao && <p className={styles.desc}>{e.descricao}</p>}</div>
+              </div>
+            ))}
+          </section>
+
+          <section className={`${styles.card} ${styles.projCard}`}>
+            <div className={styles.cardHeader}>
+              <h3>Projetos</h3>
+              <button onClick={() => navigate("/curriculo")}>+ Adicionar</button>
+            </div>
+            {projs.length === 0 && (
+              <div className={styles.emptyProj}>
+                <h4>Nenhum projeto</h4>
+                <button onClick={() => navigate("/curriculo")}>+ Adicionar projeto</button>
+              </div>
+            )}
+          </section>
+
+          <aside className={`${styles.card} ${styles.actionsCard}`}>
+            <h3>Ações rápidas</h3>
+            <button onClick={() => navigate("/curriculo")}><div className={styles.actionIcon}>💼</div><div><strong>Adicionar experiência</strong><span>Conte sua trajetória</span></div></button>
+            <button onClick={() => navigate("/curriculo")}><div className={styles.actionIcon}>🎓</div><div><strong>Adicionar formação</strong><span>Cursos e certificações</span></div></button>
+            <button onClick={() => navigate("/curriculo")}><div className={styles.actionIcon}>🚀</div><div><strong>Adicionar projeto</strong><span>Destaque projetos</span></div></button>
+            <button onClick={() => navigate("/curriculo")}><div className={styles.actionIcon}>⚡</div><div><strong>Adicionar competência</strong><span>Suas habilidades</span></div></button>
+          </aside>
+        </div>
       </main>
     </div>
   );
-};
-
-export default Perfil;
+}

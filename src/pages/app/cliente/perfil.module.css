@@ -1,343 +1,444 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-
-:root {
-  --bg: #0d021a;
-  --card: #1e0b36;
-  --purple: #7E22CE;
-  --purple2: #9333EA;
-  --text: #ffffff;
-  --muted: #b19cd9;
-  --line: rgba(126, 34, 206, 0.25);
-}
-
-* { box-sizing: border-box; }
-
-html, body {
-  height: auto;
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Poppins', sans-serif;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* ===== SCROLL TRANSPARENTE ESTILO META AI ===== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(126, 34, 206, 0.28);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(126, 34, 206, 0.5);
-  background-clip: padding-box;
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(126,34,206,0.35) transparent;
-}
-
-/* ===== LAYOUT FULL WIDTH ===== */
-.container {
+/* TEMA ROXO PROFISSIONAL */
+.page {
   display: flex;
-  width: 100%;
   min-height: 100vh;
+  background: #0a0318;
+  color: #fff;
+  font-family:
+    Inter,
+    -apple-system,
+    sans-serif;
 }
-.content {
+.main {
   flex: 1;
-  margin-left: 260px;
-  width: calc(100% - 260px);
-  padding: 48px clamp(20px, 4vw, 60px);
-  padding-bottom: 120px;
+  margin-left: 250px;
+  padding: 24px;
+  width: calc(100% - 250px);
+  background:
+    radial-gradient(
+      800px 400px at 20% 0%,
+      rgba(124, 58, 237, 0.15),
+      transparent
+    ),
+    radial-gradient(
+      600px 300px at 80% 100%,
+      rgba(139, 92, 246, 0.1),
+      transparent
+    );
 }
 
-/* HEADER */
-.profileHeader {
+/* TOPO */
+.topBar {
   display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-bottom: 40px;
-  width: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
-.profileHeader h1 {
-  font-size: clamp(28px, 3.5vw, 44px);
-  margin: 0;
+.topText h1 {
+  font-size: 24px;
   font-weight: 700;
-  line-height: 1.1;
+  margin: 0 0 4px;
+  color: #fff;
 }
-.profileHeader p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 15px;
+.topText p {
+  margin: 0;
+  color: #b8a1e6;
+  font-size: 14px;
 }
-.badge {
-  display: inline-block;
-  margin-top: 8px;
-  background: var(--purple);
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 12px;
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 150px;
+  padding: 8px 20px;
+  background: #4911c0;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  height: 34px;
+  white-space: nowrap;
+  box-shadow: 0 6px 8px rgba(68, 11, 201, 0.2);
 }
 
-.avatarWrapper {
+/* GRID LINKEDIN-LIKE */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 16px;
+  grid-template-areas:
+    "profile profile about"
+    "edu skills exp"
+    "proj proj actions";
+}
+.profileCard {
+  grid-area: profile;
+}
+.aboutCard {
+  grid-area: about;
+}
+.eduCard {
+  grid-area: edu;
+}
+.skillsCard {
+  grid-area: skills;
+}
+.expCard {
+  grid-area: exp;
+}
+.projCard {
+  grid-area: proj;
+}
+.actionsCard {
+  grid-area: actions;
+}
+
+.card {
+  background: #160c2e;
+  border: 1px solid #2a1b4d;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* PERFIL */
+.profileMain {
+  display: flex;
+  gap: 16px;
+}
+.avatarBox {
   position: relative;
-  width: 100px;
-  height: 100px;
   flex-shrink: 0;
 }
-.avatar {
-  width: 100%;
-  height: 100%;
+.avatarBox img {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--purple);
-  background: var(--card);
+  border: 3px solid #7c3aed;
 }
-.avatarEdit {
+.camBtn {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 32px;
-  height: 32px;
-  background: var(--purple);
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: #7c3aed;
   border-radius: 50%;
   display: grid;
   place-items: center;
   cursor: pointer;
-  border: 3px solid var(--bg);
-  font-size: 14px;
-  transition: transform 0.2s;
+  border: 2px solid #160c2e;
 }
-.avatarEdit:hover {
-  transform: scale(1.08);
-  background: var(--purple2);
+.profileInfo h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.tag {
+  display: inline-block;
+  background: #7c3aed;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.contacts span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #c4b5fd;
+}
+.progressWrap {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #2a1b4d;
+}
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.progressTop strong {
+  color: #a78bfa;
+}
+.progressBar {
+  height: 6px;
+  background: #0f0620;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progressBar div {
+  height: 100%;
+  background: #7c3aed;
+  transition: width 0.3s;
+}
+.progressWrap small {
+  font-size: 11px;
+  color: #8a7ab8;
 }
 
 /* CARDS */
-.card {
-  width: 100%;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 32px;
-  margin-bottom: 28px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-}
 .cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
-  gap: 16px;
+  margin-bottom: 14px;
 }
-.cardHeader h2 {
-  font-size: 20px;
+.cardHeader h3 {
   margin: 0;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
 }
-
-.btnGhost {
-  background: transparent;
-  border: 1.5px solid var(--purple);
-  color: var(--purple);
-  padding: 9px 22px;
-  border-radius: 10px;
+.cardHeader button {
+  background: none;
+  border: none;
+  color: #a78bfa;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.cardHeader button:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.itemRow {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+}
+.itemRow:not(:last-child) {
+  border-bottom: 1px solid #2a1b4d;
+}
+.itemIcon {
+  width: 36px;
+  height: 36px;
+  background: #1f1238;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.itemRow strong {
+  display: block;
   font-size: 14px;
-  transition: all 0.2s;
-  white-space: nowrap;
+  margin-bottom: 2px;
 }
-.btnGhost:hover {
-  background: var(--purple);
-  color: #fff;
+.itemRow p {
+  margin: 0;
+  font-size: 13px;
+  color: #b8a1e6;
 }
-.btnPrimary {
-  background: var(--purple);
+.itemRow small {
+  font-size: 11px;
+  color: #8a7ab8;
+}
+.desc {
+  margin-top: 4px !important;
+  color: #d1c5f0 !important;
+}
+
+.skillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.skillList span {
+  background: #1f1238;
+  border: 1px solid #3a2a5c;
+  color: #c4b5fd;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+}
+.skillProgress {
+  height: 4px;
+  background: #0f0620;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.skillProgress div {
+  height: 100%;
+  background: #7c3aed;
+}
+.skillsCard small {
+  font-size: 11px;
+  color: #8a7ab8;
+}
+
+.emptyProj {
+  text-align: center;
+  padding: 30px 10px;
+}
+.emptyProj h4 {
+  color: #a78bfa;
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+.emptyProj button {
+  background: #7c3aed;
   color: #fff;
   border: none;
-  padding: 12px 28px;
-  border-radius: 10px;
-  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 15px;
+}
+
+/* AÇÕES */
+.actionsCard h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.actionsCard button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #1a0f2e;
+  border: 1px solid #2a1b4d;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
   transition: all 0.2s;
 }
-.btnPrimary:hover {
-  background: var(--purple2);
-  transform: translateY(-1px);
+.actionsCard button:hover {
+  background: #23163d;
+  border-color: #7c3aed;
 }
-
-/* DADOS - 3 COLUNAS */
-.grid3 {
+.actionIcon {
+  width: 32px;
+  height: 32px;
+  background: #2a1b4d;
+  border-radius: 6px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px 44px;
-  width: 100%;
+  place-items: center;
+  font-size: 16px;
+  flex-shrink: 0;
 }
-.field label {
+.actionsCard button strong {
+  display: block;
+  font-size: 13px;
+  color: #a78bfa;
+  margin-bottom: 2px;
+}
+.actionsCard button span {
   font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  display: block;
-}
-.field p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-  word-break: break-word;
-}
-.field input {
-  width: 100%;
-  background: #0a0114;
-  border: 1px solid var(--line);
-  color: var(--text);
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-size: 15px;
-  outline: none;
-  transition: border 0.2s;
-}
-.field input:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgba(126,34,206,0.15);
-}
-.err {
-  color: #ff6b6b;
-  font-size: 12px;
-  margin-top: 5px;
-  display: block;
-}
-.actions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
+  color: #8a7ab8;
 }
 
-/* CURRÍCULO PROFISSIONAL */
-.cvGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+.textarea {
   width: 100%;
-}
-.cvCard {
-  background: #140726;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 22px;
-  min-height: 110px;
-  transition: transform 0.2s, border-color 0.2s;
-}
-.cvCard:hover {
-  transform: translateY(-2px);
-  border-color: rgba(126,34,206,0.4);
-}
-.cvCard h4 {
-  margin: 0 0 8px;
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
-}
-.cvCard p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #e9ddff;
-  white-space: pre-wrap;
-}
-
-.formGrid { display: grid; gap: 18px; }
-.fieldFull label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 8px;
-  display: block;
-}
-.fieldFull input,
-.fieldFull textarea {
-  width: 100%;
-  background: #0a0114;
-  border: 1px solid var(--line);
-  color: var(--text);
-  padding: 14px;
-  border-radius: 12px;
-  font-size: 15px;
-  outline: none;
+  background: #0f0620;
+  border: 1px solid #3a2a5c;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
   font-family: inherit;
-  transition: border 0.2s;
-}
-.fieldFull input:focus,
-.fieldFull textarea:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgba(126,34,206,0.15);
-}
-.fieldFull textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
+  font-size: 14px;
+}
+.saveBtn {
+  margin-top: 8px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* ===== RESPONSIVO ===== */
-@media (max-width: 1200px) {
-  .content { padding: 36px 32px; }
-  .grid3 { grid-template-columns: repeat(2, 1fr); gap: 24px 32px; }
+.skeleton {
+  height: 500px;
+  background: #160c2e;
+  border-radius: 12px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
+/* RESPONSIVO PERFEITO */
 @media (max-width: 1024px) {
-  .content {
+  .main {
     margin-left: 0;
     width: 100%;
-    padding: 28px 24px;
+    padding: 20px;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "profile profile"
+      "about about"
+      "edu skills"
+      "exp exp"
+      "proj actions";
   }
 }
 
-@media (max-width: 768px) {
-  .content {
-    padding: 20px 16px;
-    padding-bottom: 100px;
+@media (max-width: 640px) {
+  .main {
+    padding: 14px;
   }
-  .profileHeader {
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .avatarWrapper { width: 80px; height: 80px; }
-  .profileHeader h1 { font-size: 26px; }
-  .card {
-    padding: 22px;
-    border-radius: 18px;
-    margin-bottom: 20px;
-  }
-  .cardHeader {
+  .topBar {
     flex-direction: column;
-    align-items: flex-start;
     gap: 12px;
   }
-  .btnGhost { width: 100%; text-align: center; }
-  .grid3 { grid-template-columns: 1fr; gap: 20px; }
-  .cvGrid { grid-template-columns: 1fr; gap: 14px; }
-  .actions { justify-content: stretch; }
-  .btnPrimary { width: 100%; }
-}
-
-@media (max-width: 480px) {
-  .avatarWrapper { width: 72px; height: 72px; }
-  .profileHeader h1 { font-size: 24px; }
+  .editBtn {
+    align-self: flex-end;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "profile"
+      "about"
+      "edu"
+      "skills"
+      "exp"
+      "proj"
+      "actions";
+  }
+  .profileMain {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .avatarBox img {
+    width: 90px;
+    height: 90px;
+  }
+  .card {
+    padding: 16px;
+  }
+  .topText h1 {
+    font-size: 20px;
+  }
 }

@@ -1,273 +1,497 @@
-/* ESTRUTURA GLOBAL */
-.layout {
+.app {
   display: flex;
-  width: 100%;
   min-height: 100vh;
-  background-color: #0b0712;
-  color: white;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  width: 100%;
+  background: #09090b;
+  color: #e4e4e7;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-/* CONTEÚDO PRINCIPAL (Respeita a Sidebar) */
-.mainContent {
+.main {
   flex: 1;
-  margin-left: 280px; /* Largura da sua Sidebar */
-  padding: 40px;
+  margin-left: 240px;
+  padding: 40px 48px;
+  width: calc(100% - 240px);
+  min-height: 100vh;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
 }
 
-/* HEADER - Perfil à direita e Título à esquerda */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Garante que tudo fique alinhado ao topo */
+  align-items: flex-start;
   margin-bottom: 40px;
-  width: 100%;
+  gap: 24px;
 }
 
-.welcomeText h1 {
-  font-size: clamp(24px, 4vw, 32px);
-  font-weight: 800;
+.headerLeft h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #fafafa;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.headerLeft p {
+  color: #a1a1aa;
+  font-size: 15px;
   margin: 0;
+  font-weight: 400;
 }
 
-.welcomeText p {
-  color: #94a3b8;
-  margin: 5px 0 0;
-}
-
-/* CONTAINER DO PERFIL */
-.userProfile {
+.userCard {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 6px 15px;
-  border-radius: 50px;
+  background: #111113;
+  border: 1px solid #1f23;
+  padding: 8px 16px 8px 8px;
+  border-radius: 12px;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s ease;
 }
 
-.profileText {
-  text-align: right;
+.userCard:hover {
+  background: #16161a;
+  border-color: #27272f;
+}
+
+.userAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #18181b;
+  flex-shrink: 0;
+}
+
+.userAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .userName {
-  display: block;
-  font-weight: 700;
   font-size: 14px;
+  font-weight: 600;
+  color: #fafafa;
+  line-height: 1.2;
 }
 
-.userType {
-  font-size: 10px;
-  color: #a855f7;
-  font-weight: 900;
+.userBadge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #a78bfa;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.avatarWrapper {
-  position: relative;
-}
-
-.avatarWrapper img {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 2px solid #a855f7;
-}
-
-.onlineDot {
-  position: absolute;
-  bottom: 2px;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  background: #22c55e;
-  border-radius: 50%;
-  border: 2px solid #0b0712;
-}
-
-/* SEÇÃO HERO (Currículo + Dicas) */
-.heroSection {
+.grid2 {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 25px;
-  margin-bottom: 30px;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.curriculoCard, .tipsCard {
-  background: #161225;
-  border-radius: 20px;
-  padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.card {
+  background: #111113;
+  border: 1px solid #1f1f23;
+  border-radius: 16px;
+  padding: 28px;
 }
 
-.progressData {
+.cardHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  margin: 20px 0;
+  margin-bottom: 24px;
 }
 
-.percentage {
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0;
+}
+
+.scoreWrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.scoreValue {
   font-size: 48px;
-  font-weight: 900;
+  font-weight: 700;
+  color: #fafafa;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.statusBadge {
+.expertBadge {
   padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 800;
-  border: 1px solid;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .progressBar {
-  height: 12px;
-  background: #26203b;
-  border-radius: 10px;
-  margin-bottom: 25px;
+  height: 6px;
+  background: #18181b;
+  border-radius: 3px;
   overflow: hidden;
+  margin: 0 0 28px;
 }
 
 .progressFill {
   height: 100%;
-  transition: width 0.7s ease-in-out;
+  border-radius: 3px;
+  transition: width 0.6s ease;
 }
 
-.btnAction {
-  padding: 14px 30px;
-  background: #7e22ce;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.btnAction:hover {
-  background: #9333ea;
-}
-
-/* LISTA DE DICAS */
-.tipsList {
-  list-style: none;
-  padding: 0;
-  margin-top: 15px;
-}
-
-.tipsList li {
-  display: flex;
-  gap: 10px;
-  color: #cbd5e1;
-  margin-bottom: 10px;
-  font-size: 13.5px;
-}
-
-.tipsList span {
-  color: #a855f7;
-  font-weight: 900;
-}
-
-/* GRID DE ESTATÍSTICAS */
-.statsGrid {
+.metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 20px 0;
+  border-top: 1px solid #1f1f23;
+  border-bottom: 1px solid #1f1f23;
 }
 
-.statItem {
-  background: #161225;
-  padding: 25px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+.metricLabel {
+  font-size: 12px;
+  color: #71717a;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
-.statItem h2 {
-  font-size: 36px;
-  font-weight: 900;
-  margin: 10px 0 5px;
+.metricValue {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fafafa;
 }
 
-/* BOTÃO DE CHAT (FAB) */
-.floatingChat {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 65px;
-  height: 65px;
-  background: #7e22ce;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
+.btnPrimary {
+  width: 100%;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 550;
+  font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-  z-index: 999;
+  transition: background 0.15s;
 }
 
-.badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ef4444;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 900;
+.btnPrimary:hover {
+  background: #6d28d9;
+}
+
+.badgeCount {
+  background: #18181b;
+  color: #a1a1aa;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionItem {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid #1f1f23;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.actionItem:hover {
+  background: #16161a;
+  border-color: #27272f;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #3f3f46;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.15s;
+}
+
+.actionItem:hover.checkbox {
+  border-color: #52525b;
+}
+
+.actionContent {
+  flex: 1;
+}
+
+.actionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e4e4e7;
+  margin-bottom: 2px;
+}
+
+.actionDesc {
+  font-size: 13px;
+  color: #71717a;
+  line-height: 1.4;
+}
+
+.linkMore {
+  display: inline-block;
+  margin-top: 16px;
+  color: #a78bfa;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.linkMore:hover {
+  color: #c4b5fd;
+}
+
+.cardFull {
+  padding: 28px;
+}
+
+.tabs {
+  display: flex;
+  gap: 28px;
+  border-bottom: 1px solid #1f1f23;
+  margin-bottom: 24px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: #71717a;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 0 12px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 3px solid #0b0712;
+  gap: 6px;
+  position: relative;
+  transition: color 0.15s;
 }
 
-/* RESPONSIVIDADE MOBILE */
+.tab:hover {
+  color: #a1a1aa;
+}
+
+.tab.active {
+  color: #fafafa;
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #7c3aed;
+}
+
+.tabCount {
+  background: #18181b;
+  color: #71717a;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tab.active.tabCount {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+}
+
+.vagaCard {
+  padding: 20px 24px;
+  background: #0c0c0e;
+  border: 1px solid #1f1f23;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 24px;
+}
+
+.vagaCard:hover {
+  background: #111113;
+  border-color: #27272f;
+}
+
+.vagaContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.vagaHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.vagaTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0;
+}
+
+.vagaBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.vagaMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #a1a1aa;
+  flex-wrap: wrap;
+}
+
+.vagaMetaItem {
+  white-space: nowrap;
+}
+
+.vagaSalario {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.vagaAction {
+  flex-shrink: 0;
+}
+
+.btnCandidatar {
+  background: transparent;
+  color: #e4e4e7;
+  border: 1px solid #27272f;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btnCandidatar:hover {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #fafafa;
+}
+
+.btnVerTodas {
+  width: 100%;
+  margin-top: 16px;
+  background: transparent;
+  color: #a1a1aa;
+  border: 1px solid #1f1f23;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnVerTodas:hover {
+  background: #111113;
+  color: #e4e4e7;
+  border-color: #27272f;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 8px;
+}
+
+.emptyDesc {
+  font-size: 14px;
+  color: #71717a;
+  margin: 0;
+}
+
+.allDone {
+  text-align: center;
+  padding: 24px;
+}
+
 @media (max-width: 1024px) {
-  .mainContent {
-    margin-left: 80px; /* Sidebar reduzida */
-    padding: 30px;
+  .main {
+    margin-left: 0;
+    width: 100%;
+    padding: 24px;
   }
-  .heroSection {
+  .grid2 {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .mainContent {
-    margin-left: 0;
-    padding: 90px 20px 40px; /* Espaço para o menu sanduíche */
+  .main {
+    padding: 20px 16px;
   }
-
   .header {
-    align-items: flex-start; /* PERFIL MAIS PARA CIMA */
-    gap: 10px;
+    flex-direction: column;
   }
-
-  .welcomeText {
-    max-width: 65%;
+  .vagaCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
-
-  .profileText {
-    display: none; /* Esconde nome no mobile para ganhar espaço */
+  .vagaAction {
+    width: 100%;
   }
-
-  .userProfile {
-    padding: 5px;
-    background: transparent;
-    border: none;
-  }
-
-  .avatarWrapper img {
-    width: 45px;
-    height: 45px;
+  .btnCandidatar {
+    width: 100%;
   }
 }

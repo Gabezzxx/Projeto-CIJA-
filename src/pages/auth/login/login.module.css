@@ -255,15 +255,15 @@ body::before {
   font-size: 0.9rem;
   font-weight: 600;
 
-  margin-bottom: 28px;
+  margin-bottom: 50px;
 
   backdrop-filter: blur(12px);
 }
 
 .left h1 {
-  font-size: clamp(4rem, 12vw, 10rem);
-
-  line-height: 0.94;
+  font-size: clamp(4rem, 12vw, 12rem);
+    margin-top: -2px;
+  line-height: 0.6;
 
   letter-spacing: -4px;
 
@@ -279,7 +279,7 @@ body::before {
 }
 
 .tagline {
-  margin-top: 24px;
+  margin-top: 40px;
 
   color: var(--muted);
 
@@ -877,9 +877,11 @@ body::before {
   }
 
   .left h1 {
-    font-size: clamp(3rem, 14vw, 5rem);
+    font-size: clamp(5rem, 14vw, 8rem);
+    margin-top: -20px;
 
-    letter-spacing: -2px;
+    transform: translateY(10%);
+    letter-spacing: -3px;
   }
 
   .tagline {
