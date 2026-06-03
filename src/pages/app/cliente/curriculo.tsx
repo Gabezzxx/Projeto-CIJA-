@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import { supabase } from "supabaseClient";
 import styles from "./curriculo.module.css";
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 
 type Toast = {
   id: number;
@@ -25,6 +26,7 @@ type Experiencia = {
 type Idioma = { idioma: string; nivel: string };
 
 export const Curriculo: React.FC = () => {
+  useDocumentTitle("CIJA - Revisar Currículo");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../../../supabaseClient";
 import styles from "./vagasEmpresa.module.css";
 import { SidebarEmpresa } from "../../../components/sideBar/sideBarEmpresa";
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 
 interface Vaga {
   id_vag: string;
@@ -22,6 +23,7 @@ export const VagasEmpresa: React.FC = () => {
   const [vagaParaExcluir, setVagaParaExcluir] = useState<Vaga | null>(null);
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  useDocumentTitle("CIJA - Vagas da Empresa");
   const [cargaHoraria, setCargaHoraria] = useState<number>(0);
   const [salario, setSalario] = useState<number>(0);
 

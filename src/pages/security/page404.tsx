@@ -1,15 +1,14 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./page404.module.css";
-
+import { useDocumentTitle } from "../../Hooks/useDocumentTitle";
 import cijaLogo from "../../../src/assets/logo2.png";
 import errorImg from "../../assets/404error-img.svg";
 
 export default function Page404() {
   const navigate = useNavigate();
-  useEffect(() => {
-    document.title = "404 - Página Não Encontrada";
-  }, [navigate]);
+  useDocumentTitle("404 - Página Não Encontrada");
+
   return (
     <main className={styles.wrapper}>
       <header className={styles.header}>
@@ -17,7 +16,7 @@ export default function Page404() {
 
         <nav className={styles.nav}>
           <button onClick={() => navigate("/")}>Login</button>
-
+          
           <button onClick={() => navigate("/cadastro")}>Cadastro</button>
 
           <button onClick={() => navigate("/ajuda")}>Ajuda</button>

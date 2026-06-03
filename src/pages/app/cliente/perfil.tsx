@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import { supabase } from "supabaseClient";
 import styles from "./perfil.module.css";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 export default function Perfil() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -15,7 +15,7 @@ export default function Perfil() {
     cidade: "São Paulo, Brasil",
     avatar: "",
     titulo: "Jovem Aprendiz",
-  });
+  });useDocumentTitle("CIJA - Perfil");
   const [cv, setCv] = useState({ desc: "", comp: "", exp: "{}", cur: "[]" });
   const [editing, setEditing] = useState(false);
   const [summary, setSummary] = useState("");

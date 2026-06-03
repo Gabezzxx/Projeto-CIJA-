@@ -7,13 +7,13 @@ import styles from "./loginEmpresa.module.css";
 import { supabase } from "supabaseClient";
 
 import cija_logo from "../../../assets/logo2.png";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";  
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
 
 export default function LoginEmpresa() {
   const navigate = useNavigate();
-
+  useDocumentTitle("CIJA - Login Empresarial");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 

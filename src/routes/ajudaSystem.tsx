@@ -1,10 +1,11 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
 import styles from "./ajuda.module.css";
-
+import { useDocumentTitle } from "../Hooks/useDocumentTitle";
 import logo from "../assets/logo2.png";
 
 export default function Ajuda() {
+  useDocumentTitle("CIJA - Central de Ajuda");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [assunto, setAssunto] = useState("");

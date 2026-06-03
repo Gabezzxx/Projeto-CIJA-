@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../../../../components/sideBar/sideBar";
 import styles from "./clientDash.module.css";
 import { supabase } from "supabaseClient";
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [perfil, setPerfil] = useState({ nome: "", avatar_url: "", id: "" });
   const [percent, setPercent] = useState(0);
   const [checks, setChecks] = useState<any>({});
+  useDocumentTitle("CIJA - Dashboard Jovem Aprendiz");
   const [loading, setLoading] = useState(true);
   const [vagas, setVagas] = useState<any[]>([]);
 

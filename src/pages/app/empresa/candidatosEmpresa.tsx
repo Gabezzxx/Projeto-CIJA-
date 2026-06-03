@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./mensagemEmpresa.module.css";
 import { SidebarEmpresa } from "../../../components/sideBar/sideBarEmpresa";
 import { supabase } from "../../../supabaseClient";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 interface Candidatura {
   id_candidatura: string;
   data_candidatura: string;
@@ -27,7 +27,7 @@ interface Candidatura {
 const CandidatosEmpresa: React.FC = () => {
   const [candidaturas, setCandidaturas] = useState<Candidatura[]>([]);
   const [loading, setLoading] = useState(true);
-
+  useDocumentTitle("CIJA - Candidatos às suas Vagas");
   useEffect(() => {
     buscarCandidatos();
   }, []);

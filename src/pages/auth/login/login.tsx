@@ -6,10 +6,10 @@ import { supabase } from "supabaseClient";
 import cija_logo from "../../../assets/logo2.png";
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 export default function Login() {
   const navigate = useNavigate();
-
+  useDocumentTitle("CIJA - Login Jovem Aprendiz");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});

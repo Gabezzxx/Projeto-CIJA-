@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
 import styles from "./menuEmpresa.module.css";
 import { SidebarEmpresa } from "../../../components/sideBar/sideBarEmpresa";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 interface Vaga {
   id_vag: string;
   id_em: string;
@@ -25,6 +25,7 @@ interface JovemAprendiz {
 const MenuEmpresa: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [vagas, setVagas] = useState<Vaga[]>([]);
+  useDocumentTitle("CIJA - Menu da Empresa");
   const [metricas, setMetricas] = useState({
     vagasLancadas: 0,
     alcanceTotal: 0,

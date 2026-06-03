@@ -4,12 +4,12 @@ import styles from "./perfilEmpresa.module.css";
 import { supabase } from "../../../supabaseClient";
 import { validarTelefone } from "../../../utils/validations/cadastroValidation";
 import { formatarTelefone } from "../../../utils/validations/formatter";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 const PerfilEmpresa: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-
+  useDocumentTitle("CIJA - Perfil da Empresa");
   const [editandoDados, setEditandoDados] = useState(false);
   const [erro, setErro] = useState({ nome: "", telefone: "", endereco: "" });
 

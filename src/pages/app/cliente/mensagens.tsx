@@ -1,8 +1,9 @@
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import React from "react";
 import styles from "./mensagens.module.css";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 const Mensagens: React.FC = () => {
+  useDocumentTitle("CIJA - Mensagens");
   return (
     <div className={styles.container}>
       <Sidebar />

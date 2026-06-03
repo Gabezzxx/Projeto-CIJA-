@@ -2,7 +2,7 @@ import { Sidebar } from "../../../components/sideBar/sideBar";
 import React, { useEffect, useState } from "react";
 import styles from "./vagas.module.css";
 import { supabase } from "../../../supabaseClient";
-
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 interface Vaga {
   id_vag: string;
   id_em: string;
@@ -16,6 +16,7 @@ interface Vaga {
 const Vagas: React.FC = () => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  useDocumentTitle("CIJA - Vagas Disponíveis");
   const [userId, setUserId] = useState<string | null>(null);
   // Estado para armazenar IDs das vagas que o usuário já se candidatou
   const [minhasCandidaturas, setMinhasCandidaturas] = useState<string[]>([]);
