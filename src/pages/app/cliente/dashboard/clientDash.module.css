@@ -46,16 +46,17 @@
   align-items: center;
   gap: 12px;
   background: #111113;
-  border: 1px solid #1f23;
+  border: 1px solid #6d28d9;
   padding: 8px 16px 8px 8px;
   border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  
+  transition: all 0.25s ease;
 }
 
 .userCard:hover {
-  background: #16161a;
-  border-color: #27272f;
+ box-shadow: 0 2px 8px rgba(199, 198, 198, 0.2);
+  cursor: pointer;
+
 }
 
 .userAvatar {
