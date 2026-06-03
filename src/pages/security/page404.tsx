@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import styles from "./page404.module.css";
 import { useNavigate } from "react-router-dom";
-
+//sistema de navegação para voltar para a página inicial
 export const Page404: React.FC = () => {
   const navigate = useNavigate();
   const handleLinkback = () => {
