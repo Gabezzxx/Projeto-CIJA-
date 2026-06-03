@@ -19,6 +19,7 @@ import CandidatosEmpresa from "pages/app/empresa/candidatosEmpresa";
 import ConfirmarEmail from "pages/auth/cadastro/confirmarEmail";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Page404 from "pages/security/page404";
+import Ajuda from "routes/ajudaSystem";
 function App() {
   return (
     <AnimatePresence mode="wait">
@@ -31,7 +32,7 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/criar-senha" element={<CriarNovaSenha />} />
-
+        <Route path="/ajuda" element={<Ajuda />} />
         <Route path="/loginEmpresa" element={<LoginEmpresa />} />
         <Route path="/cadastroEmpresa" element={<CadastroEmpresa />} />
 
