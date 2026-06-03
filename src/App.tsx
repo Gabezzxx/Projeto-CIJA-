@@ -18,7 +18,7 @@ import VagasEmpresa from "pages/app/empresa/vagasEmpresa";
 import CandidatosEmpresa from "pages/app/empresa/candidatosEmpresa";
 import ConfirmarEmail from "pages/auth/cadastro/confirmarEmail";
 import ProtectedRoute from "./routes/ProtectedRoute";
-
+import Page404 from "pages/security/page404";
 function App() {
   return (
     <AnimatePresence mode="wait">
@@ -27,6 +27,7 @@ function App() {
              ROTAS PÚBLICAS
            ========================================================= */}
         <Route path="/" element={<Login />} />
+        <Route path="*" element={<Page404/>} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/criar-senha" element={<CriarNovaSenha />} />
