@@ -491,11 +491,11 @@ body {
 .toggleSenha {
   position: absolute;
 
-  top: 45%;
+  top: 10%;
 
   right: 6px;
 
-  transform: translateY(-50%);
+
 
   width: 52px;
 
