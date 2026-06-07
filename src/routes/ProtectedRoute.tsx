@@ -1,7 +1,6 @@
 import { useEffect, useState, ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "supabaseClient";
-import { useAuth } from "../contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -12,120 +11,263 @@ export default function ProtectedRoute({
   children,
   tipoEsperado,
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
   const location = useLocation();
-
-  // Estado para verificar se o usuário tem o tipo correto
-  const [userType, setUserType] = useState<"jovem_aprendiz" | "empresa" | null>(
-    null,
-  );
-  const [emailConfirmed, setEmailConfirmed] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [isJovem, setIsJovem] = useState(false);
+  const [isEmpresa, setIsEmpresa] = useState(false);
+  const [emailConfirmado, setEmailConfirmado] = useState(true);
+  const [timerConcluido, setTimerConcluido] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setUserType(null);
-      setChecking(false);
-      return;
-    }
+    let mounted = true;
+    const aguardarTempo = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Verificar tipo de usuário de forma eficiente
-    const checkUserType = async () => {
+    async function checarIdentidade() {
       try {
-        // Primeiro tentar pelo user_id (mais eficiente)
+        const dadosSessionPromise = supabase.auth.getSession();
+        const delayPromise = aguardarTempo(2500);
+
+        const [sessionResult] = await Promise.all([
+          dadosSessionPromise,
+          delayPromise,
+        ]);
+        const session = sessionResult.data.session;
+
+        if (!session?.user) {
+          if (mounted) setLoading(false);
+          return;
+        }
+
+        const userId = session.user.id;
+        const emailAuth = session.user.email?.trim().toLowerCase();
+
+        // 1. Jovem
         let { data: jovem } = await supabase
           .from("jovem_aprendiz")
-          .select("email_confirmado")
-          .eq("user_id", user.id)
-          .single();
-
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!jovem && emailAuth) {
+          const { data: listaJovens } = await supabase
+            .from("jovem_aprendiz")
+            .select("*");
+          jovem =
+            listaJovens?.find(
+              (j) => j.email?.trim().toLowerCase() === emailAuth,
+            ) || null;
+        }
         if (jovem) {
-          setUserType("jovem_aprendiz");
-          setEmailConfirmed(
-            jovem.email_confirmado === true ||
-              jovem.email_confirmado === "true",
-          );
-          setChecking(false);
+          if (mounted) {
+            setIsJovem(true);
+            const verificado =
+              jovem.email_confirmado === true ||
+              String(jovem.email_confirmado) === "true";
+            setEmailConfirmado(verificado);
+            setLoading(false);
+          }
           return;
         }
 
+        // 2. Empresa
         let { data: empresa } = await supabase
           .from("empresa")
-          .select("id_em")
-          .eq("id_em", user.id)
-          .single();
-
+          .select("*")
+          .eq("id_em", userId)
+          .maybeSingle();
+        if (!empresa && emailAuth) {
+          const { data: listaEmpresas } = await supabase
+            .from("empresa")
+            .select("*");
+          empresa =
+            listaEmpresas?.find(
+              (e) => e.email?.trim().toLowerCase() === emailAuth,
+            ) || null;
+        }
         if (empresa) {
-          setUserType("empresa");
-          setEmailConfirmed(true); // Empresas não precisam de confirmação de e-mail neste contexto
-          setChecking(false);
+          if (mounted) {
+            setIsEmpresa(true);
+            setLoading(false);
+          }
           return;
         }
 
-        // Se não encontrou por user_id, tentar por e-mail (apenas como fallback)
-        if (user.email) {
-          const email = user.email.trim().toLowerCase();
-
-          const { data: jovemPorEmail } = await supabase
-            .from("jovem_aprendiz")
-            .select("email_confirmado")
-            .eq("email", email)
-            .single();
-
-          if (jovemPorEmail) {
-            setUserType("jovem_aprendiz");
-            setEmailConfirmed(
-              jovemPorEmail.email_confirmado === true ||
-                jovemPorEmail.email_confirmado === "true",
-            );
-            setChecking(false);
-            return;
-          }
-
-          const { data: empresaPorEmail } = await supabase
-            .from("empresa")
-            .select("id_em")
-            .eq("email", email)
-            .single();
-
-          if (empresaPorEmail) {
-            setUserType("empresa");
-            setEmailConfirmed(true);
-            setChecking(false);
-            return;
-          }
-        }
-
-        // Nenhum tipo encontrado
-        setUserType(null);
-        setChecking(false);
+        if (mounted) setLoading(false);
       } catch (err) {
-        console.error("Erro ao verificar tipo de usuário:", err);
-        setUserType(null);
-        setChecking(false);
+        console.error("Erro ao validar identidade:", err);
+        if (mounted) setLoading(false);
       }
+    }
+
+    checarIdentidade();
+    return () => {
+      mounted = false;
     };
+  }, []);
 
-    checkUserType();
-  }, [user]);
+  const temAcesso =
+    (tipoEsperado === "jovem_aprendiz" && isJovem) ||
+    (tipoEsperado === "empresa" && isEmpresa);
 
-  if (checking) {
-    // Estado de carregamento simples sem delay artificial
+  useEffect(() => {
+    if (!loading && !temAcesso && (isJovem || isEmpresa)) {
+      const timer = setTimeout(() => setTimerConcluido(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, temAcesso, isJovem, isEmpresa]);
+
+  // ==================== TELA DE CARREGAMENTO PROFISSIONAL ====================
+  if (loading) {
     return (
       <div
-        style={
-          {
-            /* seu estilo de carregamento */
-          }
-        }
+        style={{
+          width: "100%",
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "radial-gradient(circle at top, #18052d 0%, #07010f 65%)",
+          position: "relative",
+          overflow: "hidden",
+          fontFamily: "'Poppins', system-ui, sans-serif",
+        }}
       >
-        {/* Indicador de carregamento simples */}
+        {/* Blobs */}
+        <div
+          style={{
+            position: "absolute",
+            width: 420,
+            height: 420,
+            top: "-15%",
+            right: "-10%",
+            background: "rgba(147,51,234,0.18)",
+            filter: "blur(110px)",
+            borderRadius: "50%",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            width: 380,
+            height: 380,
+            bottom: "-15%",
+            left: "-10%",
+            background: "rgba(88,28,135,0.16)",
+            filter: "blur(110px)",
+            borderRadius: "50%",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            width: "90%",
+            maxWidth: 380,
+            background:
+              "linear-gradient(180deg, rgba(24,12,42,0.85) 0%, rgba(11,4,20,0.9) 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 28,
+            padding: "44px 32px",
+            backdropFilter: "blur(24px)",
+            boxShadow:
+              "0 30px 100px rgba(0,0,0,0.6), 0 0 40px rgba(147,51,234,0.1)",
+            textAlign: "center",
+          }}
+        >
+          {/* Spinner */}
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              margin: "0 auto 24px",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                border: "3px solid rgba(255,255,255,0.08)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                border: "3px solid transparent",
+                borderTopColor: "#a855f7",
+                borderRightColor: "#9333ea",
+                animation: "spin 0.85s linear infinite",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 10,
+                borderRadius: "50%",
+                background: "rgba(168,85,247,0.1)",
+                animation: "pulse 2s ease-in-out infinite",
+              }}
+            />
+          </div>
+
+          <h2
+            style={{
+              margin: 0,
+              color: "white",
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: "-0.3px",
+            }}
+          >
+            Verificando acesso
+          </h2>
+          <p
+            style={{
+              margin: "8px 0 0",
+              color: "#a8a3b7",
+              fontSize: 14,
+              lineHeight: 1.5,
+            }}
+          >
+            Sincronizando seu ambiente seguro CIJA...
+          </p>
+
+          {/* Barra de progresso */}
+          <div
+            style={{
+              marginTop: 28,
+              height: 4,
+              background: "rgba(255,255,255,0.06)",
+              borderRadius: 99,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: "40%",
+                background: "linear-gradient(90deg, #9333ea, #c084fc)",
+                borderRadius: 99,
+                animation: "load 2.5s ease-in-out infinite",
+              }}
+            />
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes pulse { 0%,100% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1); } }
+          @keyframes load { 0% { transform: translateX(-120%); } 50% { transform: translateX(250%); } 100% { transform: translateX(-120%); } }
+        `}</style>
       </div>
     );
   }
 
-  if (!user) {
-    // Não autenticado
+  if (!isJovem && !isEmpresa) {
     return tipoEsperado === "empresa" ? (
       <Navigate to="/loginEmpresa" replace />
     ) : (
@@ -133,30 +275,66 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!userType) {
-    // Usuário não encontrado em nenhuma tabela
-    return tipoEsperado === "empresa" ? (
-      <Navigate to="/loginEmpresa" replace />
-    ) : (
-      <Navigate to="/" replace />
-    );
-  }
-
-  if (tipoEsperado === "jovem_aprendiz" && !emailConfirmed) {
+  if (isJovem && !emailConfirmado) {
     if (location.pathname !== "/confirmar-email") {
       return <Navigate to="/confirmar-email" replace />;
     }
     return <>{children}</>;
   }
 
-  const temAcesso = userType === tipoEsperado;
-
   if (!temAcesso) {
-    // Tentativa de acesso a painel errado
-    return tipoEsperado === "empresa" ? (
-      <Navigate to="/loginEmpresa" replace />
-    ) : (
-      <Navigate to="/" replace />
+    if (timerConcluido) {
+      return tipoEsperado === "empresa" ? (
+        <Navigate to="/loginEmpresa" replace />
+      ) : (
+        <Navigate to="/" replace />
+      );
+    }
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#07010f",
+          fontFamily: "'Poppins', sans-serif",
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(24,12,42,0.9)",
+            padding: 40,
+            borderRadius: 20,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            textAlign: "center",
+            maxWidth: 420,
+            width: "100%",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "4px solid #ef4444",
+          }}
+        >
+          <h2
+            style={{
+              color: "white",
+              margin: "0 0 10px",
+              fontSize: 22,
+              fontWeight: 700,
+            }}
+          >
+            Acesso Restrito
+          </h2>
+          <p style={{ color: "#a8a3b7", margin: "0 0 24px", fontSize: 15 }}>
+            Esta área é exclusiva para{" "}
+            {tipoEsperado === "empresa" ? "Empresas" : "Jovens Aprendizes"}.
+          </p>
+          <div style={{ color: "#71717a", fontSize: 13 }}>
+            Redirecionando em instantes...
+          </div>
+        </div>
+      </div>
     );
   }
 

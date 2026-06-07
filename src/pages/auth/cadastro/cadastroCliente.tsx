@@ -1,21 +1,17 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
 import styles from "./cadastroCliente.module.css";
 import { supabase } from "supabaseClient";
 import cija_logo from "../../../assets/logo2.png";
-
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
-
 import {
   validarCPF,
   validarIdade,
   validarTelefone,
   limparCPF,
 } from "../../../utils/validations/cadastroValidation";
-
 import {
   formatarCPF,
   formatarTelefone,
@@ -54,9 +50,7 @@ function AnimatedCheckIcon() {
 function ValidationItem({ valid, text }: { valid: boolean; text: string }) {
   return (
     <div
-      className={`${styles.validationItem} ${
-        valid ? styles.valid : styles.invalid
-      }`}
+      className={`${styles.validationItem} ${valid ? styles.valid : styles.invalid}`}
     >
       <div className={styles.validationIcon}>
         {valid ? (
@@ -72,7 +66,6 @@ function ValidationItem({ valid, text }: { valid: boolean; text: string }) {
 
 export default function CadastroCliente() {
   const navigate = useNavigate();
-
   const [form, setForm] = useState({
     nome: "",
     cpf: "",
@@ -83,29 +76,21 @@ export default function CadastroCliente() {
     confirmSenha: "",
     endereco: "",
   });
-
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [globalMessage, setGlobalMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [success, setSuccess] = useState(false);
-
   const [showSenha, setShowSenha] = useState(false);
   const [showConfirmSenha, setShowConfirmSenha] = useState(false);
   const [dateInputType, setDateInputType] = useState("text");
 
-  // =========================================================
-  // VALIDAÇÕES EM TEMPO REAL (ESTADO DERIVADO)
-  // Como são calculadas no corpo do componente, atualizam instantaneamente
-  // =========================================================
-  const hasSequence = (text: string) => {
-    const sequences = ["123456", "abcdef", "654321", "qwerty"];
-    return sequences.some((seq) => text.toLowerCase().includes(seq));
-  };
-
+  const hasSequence = (text: string) =>
+    ["123456", "abcdef", "654321", "qwerty"].some((seq) =>
+      text.toLowerCase().includes(seq),
+    );
   const cpfValido = validarCPF(form.cpf);
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
-
   const passwordRules = {
     minLength: form.senha.length >= 8,
     upperCase: /[A-Z]/.test(form.senha),
@@ -114,184 +99,126 @@ export default function CadastroCliente() {
     special: /[!@#$%^&*(),.?":{}|<>]/.test(form.senha),
     noSequence: form.senha.length > 0 ? !hasSequence(form.senha) : false,
   };
+  const strengthScore = Object.values(passwordRules).filter(Boolean).length;
+  const strengthPercent = (strengthScore / 6) * 100;
+  const strengthMap = ["", "weak", "weak", "medium", "strong", "veryStrong"];
+  const strengthTextMap = [
+    "",
+    "Muito fraca",
+    "Fraca",
+    "Média",
+    "Forte",
+    "Muito forte",
+    "Excelente",
+  ];
+  const strengthLevel = strengthMap[strengthScore];
+  const strengthText = strengthTextMap[strengthScore];
 
   useEffect(() => {
     if (globalMessage && !success) {
-      const timer = setTimeout(() => {
-        setGlobalMessage("");
-      }, 4500);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setGlobalMessage(""), 4500);
+      return () => clearTimeout(t);
     }
   }, [globalMessage, success]);
-
   const triggerError = () => {
     setIsShaking(true);
-    setTimeout(() => {
-      setIsShaking(false);
-    }, 450);
+    setTimeout(() => setIsShaking(false), 450);
   };
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    let finalValue = value;
-
-    if (name === "cpf") {
-      finalValue = formatarCPF(value);
-    }
-
-    if (name === "telefone") {
-      finalValue = formatarTelefone(value);
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: finalValue,
-    }));
-
-    // Limpa o erro do input assim que o usuário volta a digitar
+    let v = value;
+    if (name === "cpf") v = formatarCPF(value);
+    if (name === "telefone") v = formatarTelefone(value);
+    setForm((p) => ({ ...p, [name]: v }));
     if (errors[name]) {
-      const updatedErrors = { ...errors };
-      delete updatedErrors[name];
-      setErrors(updatedErrors);
+      const u = { ...errors };
+      delete u[name];
+      setErrors(u);
     }
   };
-
   const validate = () => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!form.nome.trim() || form.nome.trim().split(" ").length < 2) {
-      newErrors.nome = errorMessages.nome;
-    }
-
-    if (!cpfValido) {
-      newErrors.cpf = errorMessages.cpf;
-    }
-
-    if (!validarIdade(form.data_nasc)) {
-      newErrors.data_nasc = errorMessages.data_nasc;
-    }
-
-    if (!validarTelefone(form.telefone)) {
-      newErrors.telefone = errorMessages.telefone;
-    }
-
-    if (!emailValido) {
-      newErrors.email = errorMessages.email;
-    }
-
-    if (!form.endereco.trim()) {
-      newErrors.endereco = errorMessages.endereco;
-    }
-
-    if (
-      !passwordRules.minLength ||
-      !passwordRules.upperCase ||
-      !passwordRules.lowerCase ||
-      !passwordRules.number ||
-      !passwordRules.special ||
-      !passwordRules.noSequence
-    ) {
-      newErrors.senha = errorMessages.senha;
-    }
-
-    if (form.senha !== form.confirmSenha) {
-      newErrors.confirmSenha = errorMessages.confirmSenha;
-    }
-
-    return newErrors;
+    const n: { [k: string]: string } = {};
+    if (!form.nome.trim() || form.nome.trim().split(" ").length < 2)
+      n.nome = errorMessages.nome;
+    if (!cpfValido) n.cpf = errorMessages.cpf;
+    if (!validarIdade(form.data_nasc)) n.data_nasc = errorMessages.data_nasc;
+    if (!validarTelefone(form.telefone)) n.telefone = errorMessages.telefone;
+    if (!emailValido) n.email = errorMessages.email;
+    if (!form.endereco.trim()) n.endereco = errorMessages.endereco;
+    if (!Object.values(passwordRules).every(Boolean))
+      n.senha = errorMessages.senha;
+    if (form.senha !== form.confirmSenha)
+      n.confirmSenha = errorMessages.confirmSenha;
+    return n;
   };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setGlobalMessage("");
-
-    const validationErrors = validate();
-    setErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length > 0) {
+    const v = validate();
+    setErrors(v);
+    if (Object.keys(v).length) {
       triggerError();
       return;
     }
-
     setLoading(true);
     const emailLower = form.email.trim().toLowerCase();
-
     try {
-      const { data: existingUser } = await supabase
+      const { data: existing } = await supabase
         .from("jovem_aprendiz")
         .select("email")
         .eq("email", emailLower)
         .maybeSingle();
-
-      if (existingUser) {
+      if (existing) {
         setGlobalMessage("Este e-mail já está cadastrado.");
         triggerError();
         setLoading(false);
         return;
       }
-
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailLower,
         password: form.senha,
-        options: {
-          data: {
-            nome: form.nome,
-            tipo_usuario: "jovem_aprendiz",
-          },
-        },
+        options: { data: { nome: form.nome, tipo_usuario: "jovem_aprendiz" } },
       });
-
-      if (authError || !authData?.user) {
+      if (authError || !authData?.user)
         throw authError || new Error("Erro ao criar conta.");
-      }
-
       if (authData.user.identities && authData.user.identities.length === 0) {
         setGlobalMessage("Este e-mail já foi solicitado recentemente.");
         triggerError();
         setLoading(false);
         return;
       }
-
-      const { confirmSenha, ...formToSend } = form;
-
-      const { error: insertError } = await supabase
+      const { confirmSenha, ...toSend } = form;
+      const { error: insErr } = await supabase
         .from("jovem_aprendiz")
         .insert([
           {
             id_ja: authData.user.id,
-            ...formToSend,
+            ...toSend,
             email: emailLower,
             telefone: `+55${form.telefone.replace(/\D/g, "")}`,
             cpf: limparCPF(form.cpf),
             email_confirmado: false,
           },
         ]);
-
-      if (insertError) {
+      if (insErr) {
         await supabase.auth.signOut();
-        throw insertError;
+        throw insErr;
       }
-
       setSuccess(true);
       setGlobalMessage("Conta pré-registrada! Código enviado ao e-mail.");
-
-      setTimeout(() => {
-        navigate("/confirmar-email", {
-          state: {
-            emailAlvo: emailLower,
-            tipoUsuario: "jovem_aprendiz",
-          },
-        });
-      }, 3000);
+      setTimeout(
+        () =>
+          navigate("/confirmar-email", {
+            state: { emailAlvo: emailLower, tipoUsuario: "jovem_aprendiz" },
+          }),
+        3000,
+      );
     } catch (err: any) {
-      console.error(err);
-      if (err?.message?.includes("rate limit") || err?.status === 429) {
-        setGlobalMessage(
-          "Muitos envios. Aguarde alguns minutos antes de tentar novamente.",
-        );
-      } else {
-        setGlobalMessage(err.message || "Erro ao realizar cadastro.");
-      }
+      setGlobalMessage(
+        err?.message?.includes("rate limit")
+          ? "Muitos envios. Aguarde alguns minutos."
+          : err.message || "Erro ao realizar cadastro.",
+      );
       triggerError();
     } finally {
       setLoading(false);
@@ -304,17 +231,13 @@ export default function CadastroCliente() {
         <div className={styles.blobTop} />
         <div className={styles.blobBottom} />
       </div>
-
       <img src={cija_logo} alt="Logo" className={styles.desktopLogo} />
-
       {globalMessage && <div className={styles.alert}>{globalMessage}</div>}
-
       <div className={styles.loginContainer}>
-        {/* LEFT */}
         <div className={styles.left}>
           <img src={cija_logo} alt="Logo" className={styles.mobileLogo} />
           <h1>
-            <span className={styles.titleTop}>Crie sua conta</span>
+            <span className={styles.titleTop}>Crie sua conta</span>{" "}
             <span className={styles.titleBottom}>
               e comece <span className={styles.titleHighlight}>agora</span>
               <span className={styles.titleExclamation}>!</span>
@@ -325,8 +248,6 @@ export default function CadastroCliente() {
             da plataforma.
           </p>
         </div>
-
-        {/* CARD */}
         <div className={`${styles.loginCard} ${isShaking ? styles.shake : ""}`}>
           {success ? (
             <div className={styles.successAnimation}>
@@ -348,7 +269,7 @@ export default function CadastroCliente() {
                   d="M14.1 27.2l7.1 7.2 16.7-16.8"
                 />
               </svg>
-              <h2>Código De confirmação Enviado!</h2>
+              <h2>Código de confirmação Enviado!</h2>
               <p>
                 Aguarde 3 segundos, estamos te redirecionando para a tela de
                 validação...
@@ -357,9 +278,7 @@ export default function CadastroCliente() {
           ) : (
             <div className={styles.cardContent}>
               <h2>Cadastro</h2>
-
               <form onSubmit={handleSubmit} noValidate>
-                {/* NOME */}
                 <div className={styles.inputGroup}>
                   <input
                     type="text"
@@ -373,8 +292,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.nome}</p>
                   )}
                 </div>
-
-                {/* CPF */}
                 <div className={styles.inputGroup}>
                   <div className={styles.inputWrapper}>
                     <input
@@ -395,8 +312,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.cpf}</p>
                   )}
                 </div>
-
-                {/* DATA */}
                 <div className={styles.inputGroup}>
                   <input
                     type={dateInputType}
@@ -405,19 +320,13 @@ export default function CadastroCliente() {
                     value={form.data_nasc}
                     onChange={handleChange}
                     onFocus={() => setDateInputType("date")}
-                    onBlur={(e) => {
-                      if (!e.target.value) {
-                        setDateInputType("text");
-                      }
-                    }}
+                    onBlur={(e) => !e.target.value && setDateInputType("text")}
                     className={`${styles.input} ${styles.dateInput} ${errors.data_nasc ? styles.error : ""}`}
                   />
                   {errors.data_nasc && (
                     <p className={styles.errorMessage}>{errors.data_nasc}</p>
                   )}
                 </div>
-
-                {/* TELEFONE */}
                 <div className={styles.inputGroup}>
                   <input
                     type="text"
@@ -431,8 +340,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.telefone}</p>
                   )}
                 </div>
-
-                {/* EMAIL */}
                 <div className={styles.inputGroup}>
                   <div className={styles.inputWrapper}>
                     <input
@@ -453,8 +360,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.email}</p>
                   )}
                 </div>
-
-                {/* ENDEREÇO */}
                 <div className={styles.inputGroup}>
                   <input
                     type="text"
@@ -468,8 +373,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.endereco}</p>
                   )}
                 </div>
-
-                {/* SENHA */}
                 <div className={styles.inputGroup}>
                   <div className={styles.senhaBox}>
                     <input
@@ -488,7 +391,19 @@ export default function CadastroCliente() {
                       {showSenha ? <EyeOpenIcon /> : <EyeClosedIcon />}
                     </button>
                   </div>
-
+                  {form.senha && (
+                    <div className={styles.passwordStrength}>
+                      <div className={styles.strengthBar}>
+                        <div
+                          className={`${styles.strengthFill} ${strengthLevel ? styles[strengthLevel] : ""}`}
+                          style={{ width: `${strengthPercent}%` }}
+                        />
+                      </div>
+                      <span className={styles.strengthLabel}>
+                        {strengthText}
+                      </span>
+                    </div>
+                  )}
                   <div className={styles.passwordValidation}>
                     <ValidationItem
                       valid={passwordRules.minLength}
@@ -504,7 +419,7 @@ export default function CadastroCliente() {
                     />
                     <ValidationItem
                       valid={passwordRules.number}
-                      text=" Possuí Número"
+                      text="Possuí Número"
                     />
                     <ValidationItem
                       valid={passwordRules.special}
@@ -519,8 +434,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.senha}</p>
                   )}
                 </div>
-
-                {/* CONFIRMAR SENHA */}
                 <div className={styles.inputGroup}>
                   <div className={styles.senhaBox}>
                     <input
@@ -543,7 +456,6 @@ export default function CadastroCliente() {
                     <p className={styles.errorMessage}>{errors.confirmSenha}</p>
                   )}
                 </div>
-
                 <button
                   type="submit"
                   disabled={loading}
@@ -552,7 +464,6 @@ export default function CadastroCliente() {
                   {loading ? "Cadastrando..." : "Criar conta"}
                 </button>
               </form>
-
               <div className={styles.footerActions}>
                 <div className={styles.separator}>ou</div>
                 <p className={styles.subLink}>

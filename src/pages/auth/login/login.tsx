@@ -7,6 +7,7 @@ import cija_logo from "../../../assets/logo2.png";
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+
 export default function Login() {
   const navigate = useNavigate();
   useDocumentTitle("CIJA - Login Jovem Aprendiz");
@@ -21,9 +22,6 @@ export default function Login() {
   const [isShaking, setIsShaking] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // =========================
-  // NUMEROS ANIMADOS
-  // =========================
   const [vagas, setVagas] = useState(0);
   const [empresas, setEmpresas] = useState(0);
   const [suporte, setSuporte] = useState(0);
@@ -46,7 +44,6 @@ export default function Login() {
         }
       }, 16);
     };
-
     animateValue(setVagas, 500, 1800);
     animateValue(setEmpresas, 120, 1800);
     animateValue(setSuporte, 24, 1800);
@@ -54,18 +51,14 @@ export default function Login() {
 
   useEffect(() => {
     if (globalNotificacao) {
-      const timer = setTimeout(() => {
-        setGlobalNotificacao(null);
-      }, 4000);
+      const timer = setTimeout(() => setGlobalNotificacao(null), 4000);
       return () => clearTimeout(timer);
     }
   }, [globalNotificacao]);
 
   const triggerErrorAnimation = () => {
     setIsShaking(true);
-    setTimeout(() => {
-      setIsShaking(false);
-    }, 500);
+    setTimeout(() => setIsShaking(false), 500);
   };
 
   const validate = () => {
@@ -79,16 +72,11 @@ export default function Login() {
     return newErrors;
   };
 
-  // =========================
-  // LOGIN
-  // =========================
   const fazerLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setGlobalNotificacao(null);
-
     const validationErrors = validate();
     setErrors(validationErrors);
-
     if (Object.keys(validationErrors).length > 0) {
       triggerErrorAnimation();
       return;
@@ -96,70 +84,47 @@ export default function Login() {
 
     setLoading(true);
     const emailFormatado = email.trim().toLowerCase();
-
     try {
-      // =========================
-      // 1. BUSCA SE É JOVEM APRENDIZ
-      // =========================
       const { data: cliente, error: clienteError } = await supabase
         .from("jovem_aprendiz")
         .select("email_confirmado")
         .eq("email", emailFormatado)
         .maybeSingle();
-
       if (clienteError) throw clienteError;
-
-      // Se não for Jovem Aprendiz, barra antes de fazer o Auth
-      if (!cliente) {
+      if (!cliente)
         throw new Error(
           "Esta conta não é de Jovem Aprendiz. Caso seja uma Empresa, utilize a Área Empresarial.",
         );
-      }
 
-      // =========================
-      // 2. REALIZA O LOGIN NO AUTH
-      // =========================
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: emailFormatado,
           password: senha,
         });
-
-      if (authError || !authData.user) {
+      if (authError || !authData.user)
         throw new Error("Email ou senha inválidos.");
-      }
 
-      // =========================
-      // 3. VERIFICA CONFIRMAÇÃO DE EMAIL
-      // =========================
       const emailConfirmado =
         cliente.email_confirmado === true ||
         cliente.email_confirmado === "true";
-
       if (!emailConfirmado) {
         setGlobalNotificacao(
           "E-mail não verificado! Redirecionando para a ativação...",
         );
-        setTimeout(() => {
-          navigate("/confirmar-email", {
-            state: {
-              emailAlvo: emailFormatado,
-              tipoUsuario: "jovem_aprendiz",
-            },
-          });
-        }, 2500);
+        setTimeout(
+          () =>
+            navigate("/confirmar-email", {
+              state: {
+                emailAlvo: emailFormatado,
+                tipoUsuario: "jovem_aprendiz",
+              },
+            }),
+          2500,
+        );
         return;
       }
-
-      // =========================
-      // 4. LOGIN SUCESSO e REDIRECIONAMENTO
-      // =========================
       setLoginSuccess(true);
-
-      setTimeout(() => {
-        // Redireciona de forma limpa substituindo o histórico
-        navigate("/clientDashboard", { replace: true });
-      }, 2000);
+      setTimeout(() => navigate("/clientDashboard", { replace: true }), 2000);
     } catch (err: any) {
       console.error(err);
       setGlobalNotificacao(err.message || "Erro ao realizar login.");
@@ -169,10 +134,7 @@ export default function Login() {
     }
   };
 
-  const cardClasses = `
-    ${styles.loginCard}
-    ${isShaking ? styles.shake : ""}
-  `;
+  const cardClasses = `${styles.loginCard} ${isShaking ? styles.shake : ""}`;
 
   return (
     <div className={styles.wrapper}>
@@ -180,13 +142,10 @@ export default function Login() {
         <div className={styles.purpleBlob1}></div>
         <div className={styles.purpleBlob2}></div>
       </div>
-
       {globalNotificacao && (
         <div className={styles.alert}>{globalNotificacao}</div>
       )}
-
       <img src={cija_logo} alt="CIJA" className={styles.desktopLogo} />
-
       <div className={styles.loginContainer}>
         <div className={styles.left}>
           <span className={styles.badge}>Plataforma CIJA</span>
@@ -199,7 +158,6 @@ export default function Login() {
             <br />
             Faça login para acessar sua conta.
           </p>
-
           <div className={styles.stats}>
             <div className={styles.statBox}>
               <h3>+{vagas}</h3>
@@ -215,7 +173,6 @@ export default function Login() {
             </div>
           </div>
         </div>
-
         <div className={cardClasses}>
           {loginSuccess ? (
             <div className={styles.successAnimation}>
@@ -230,7 +187,6 @@ export default function Login() {
                 <span></span>
                 <span></span>
               </div>
-
               <svg
                 className={styles.checkmark}
                 xmlns="http://www.w3.org/2000/svg"
@@ -246,10 +202,9 @@ export default function Login() {
                 <path
                   className={styles.checkmarkCheck}
                   fill="none"
-                  d="M14 27l7 7 17-17"
+                  d="M14.1 27.2l7.1 7.2 16.7-16.8"
                 />
               </svg>
-
               <h2>Login realizado!</h2>
               <p>Entrando no painel...</p>
             </div>
@@ -258,7 +213,6 @@ export default function Login() {
               <img src={cija_logo} alt="CIJA" className={styles.mobileLogo} />
               <h2>Login</h2>
               <p>Faça seu login e aproveite nossas funcionalidades.</p>
-
               <form onSubmit={fazerLogin} noValidate>
                 <div className={styles.inputGroup}>
                   <label>Email</label>
@@ -273,7 +227,6 @@ export default function Login() {
                     <p className={styles.errorMessage}>{errors.email}</p>
                   )}
                 </div>
-
                 <div className={styles.inputGroup}>
                   <label>Senha</label>
                   <div className={styles.senhaBox}>
@@ -296,7 +249,6 @@ export default function Login() {
                     <p className={styles.errorMessage}>{errors.senha}</p>
                   )}
                 </div>
-
                 <button
                   type="submit"
                   className={styles.actionButton}
@@ -305,7 +257,6 @@ export default function Login() {
                   {loading ? "Entrando..." : "Entrar"}
                 </button>
               </form>
-
               <div className={styles.footerActions}>
                 <p className={styles.subLink}>
                   <a onClick={() => navigate("/recuperar-senha")}>
