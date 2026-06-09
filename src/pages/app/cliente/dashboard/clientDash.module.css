@@ -22,6 +22,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  align-items: center;
   margin-bottom: 40px;
   gap: 24px;
 }
@@ -478,6 +479,20 @@
 }
 
 @media (max-width: 768px) {
+  .headerLeft h1 {
+    font-size: 24px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  }
+  .headerLeft p {
+    text-align: center;
+    margin: 8px auto 0;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+  }
   .main {
     padding: 20px 16px;
   }

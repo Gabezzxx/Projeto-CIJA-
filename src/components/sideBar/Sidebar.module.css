@@ -1,8 +1,10 @@
-/* Variáveis para consistência */
 :root {
   --sb-width: 260px;
   --bg-dark: #0b0820;
   --primary-purple: #7120f3;
+  --active-bg: rgba(113, 32, 243, 0.15);
+  --hover-bg: #7e35dd;
+  --icon-active: #c084fc;
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -12,8 +14,8 @@
   background: var(--bg-dark);
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Empurra o logout para o final */
-  padding: 30px 20px;
+  justify-content: space-between;
+  padding: 30px 20px 20px;
   color: white;
   position: fixed;
   left: 0;
@@ -33,8 +35,8 @@
 }
 
 .logo {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: contain;
   margin-bottom: 10px;
@@ -49,7 +51,6 @@
 
 .title {
   color: #c084fc;
-  
   font-size: 18px;
   margin: 0;
   font-weight: 600;
@@ -58,79 +59,192 @@
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
-/* Base comum para todos os botões para manter a proporção */
-.menuItem, .logout {
+.menuItem,
+.logout {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   border: none;
-  transition: 0.2s;
+  transition: all 0.2s ease;
   text-align: left;
-}
-
-.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
   background: transparent;
-  color: #eee;
+  color: #d1d5db;
 }
 
 .menuItem:hover {
-  background:#7e35dd;
+  background: var(--hover-bg);
   color: white;
+}
+
+.menuItem:disabled,
+.logout:disabled,
+.improveBtn:disabled {
+  cursor: not-allowed;
+}
+
+.iconWrapper {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconWrapper svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+}
+
+.menuLabel {
+  flex: 1;
+}
+
+.badge {
+  background: #8b5cf6;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .active {
-
+  background: var(--active-bg);
   color: white;
-
 }
 
+.active.iconWrapper {
+  color: var(--icon-active);
+}
 
+.active:hover {
+  background: var(--active-bg);
+}
 
-/* Botão Sair - Mesmo tamanho, cor diferente */
+.loadingItem {
+  background: var(--active-bg);
+}
+
+.bottomContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.highlightCard {
+  background: linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%);
+  border-radius: 12px;
+  padding: 16px;
+  color: white;
+}
+
+.highlightCard h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+
+.highlightCard p {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0 0 12px 0;
+  color: #e9d5ff;
+}
+
+.improveBtn {
+  width: 100%;
+  background: #5525c5;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: 0.2s;
+}
+
+.improveBtn:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.improveBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
 .logout {
   background: #5826b6;
   color: white;
-  text-align: center;
-  font-weight: bold;
+  justify-content: flex-start;
+  font-weight: 600;
 }
 
 .logout:hover {
-  background: #5d1ac9; /* Um tom de rosa/roxo para destaque */
-  transform: translateY(-2px);
+  background: #5d1ac9;
+  transform: translateY(-1px);
 }
 
 /* =============================================
-   MOBILE DESIGN
+   MOBILE - HAMBURGUER FIX
    ============================================= */
 
-/* Botão Hambúrguer */
 .hamburger {
-  display: none; /* Escondido no PC */
+  display: none;
   position: fixed;
-  top: 2px;
-  width: 44px;
+  top: 20px;
   left: 20px;
+  width: 44px;
+  height: 44px;
   z-index: 1100;
-  background: var(--bg-dark);
-  border: none;
+  background: #151225;
+  border: 1px solid #2d2a3e;
   padding: 10px;
   border-radius: 8px;
   cursor: pointer;
   flex-direction: column;
   gap: 5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.hamburger:disabled {
+  opacity: 0.5;
 }
 
 .bar {
-  width: 25px;
+  width: 24px;
   height: 3px;
   background-color: white;
   transition: 0.4s;
+  border-radius: 2px;
+}
+
+/* CLASSE ADICIONADA NO BODY QUANDO ABRE */
+.sidebarOpenBody {
+  overflow: hidden;
 }
 
 @media (max-width: 992px) {
@@ -139,26 +253,37 @@
   }
 
   .sidebar {
-    transform: translateX(-100%); /* Esconde a barra lateral */
+    transform: translateX(-100%);
     width: 280px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
   }
 
   .sidebarOpen {
-    transform: translateX(0); /* Mostra ao abrir */
+    transform: translateX(0);
   }
 
   .overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 40px;
-    height: 40px;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.6);
     z-index: 999;
+    backdrop-filter: blur(2px);
   }
 
-  /* Animação do X no hambúrguer */
-  .bar1 { transform: rotate(-45deg) translate(-5px, 6px); }
-  .bar2 { opacity: 0; }
-  .bar3 { transform: rotate(45deg) translate(-5px, -6px); }
+  .bar1 {
+    transform: rotate(-45deg) translate(-5px, 6px);
+  }
+  .bar2 {
+    opacity: 0;
+  }
+  .bar3 {
+    transform: rotate(45deg) translate(-5px, -6px);
+  }
+  .content {
+    margin-left: 0;
+    padding: 80px 20px 24px 20px; /* 80px topo pro hamburguer */
+  }
 }

@@ -20,6 +20,8 @@ import ConfirmarEmail from "pages/auth/cadastro/confirmarEmail";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Page404 from "pages/security/page404";
 import Ajuda from "routes/ajudaSystem";
+import Favoritos from "pages/app/cliente/favoritos";
+import Candidaturas from "pages/app/cliente/candidaturas";
 function App() {
   return (
     <AnimatePresence mode="wait">
@@ -28,7 +30,7 @@ function App() {
              ROTAS PÚBLICAS
            ========================================================= */}
         <Route path="/" element={<Login />} />
-        <Route path="*" element={<Page404/>} />
+        <Route path="*" element={<Page404 />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/criar-senha" element={<CriarNovaSenha />} />
@@ -50,7 +52,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+        <Route
+          path="/candidaturas"
+          element={
+            <ProtectedRoute tipoEsperado="jovem_aprendiz">
+              <Candidaturas />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/curriculo"
           element={
@@ -77,7 +86,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/favoritos"
+          element={
+            <ProtectedRoute tipoEsperado="jovem_aprendiz">
+              <Favoritos />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/perfil"
           element={
