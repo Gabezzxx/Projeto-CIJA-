@@ -5,6 +5,7 @@ import { supabase } from "../../../supabaseClient";
 import { validarTelefone } from "../../../utils/validations/cadastroValidation";
 import { formatarTelefone } from "../../../utils/validations/formatter";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+
 const PerfilEmpresa: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);

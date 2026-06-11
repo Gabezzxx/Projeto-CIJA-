@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import styles from "./mensagemEmpresa.module.css";
+import styles from "./candidatosEmpresa.module.css";
 import { SidebarEmpresa } from "../../../components/sideBar/sideBarEmpresa";
 import { supabase } from "../../../supabaseClient";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+import { useNavigate } from "react-router-dom";
+
 interface Candidatura {
   id_candidatura: string;
   data_candidatura: string;
@@ -27,7 +29,11 @@ interface Candidatura {
 const CandidatosEmpresa: React.FC = () => {
   const [candidaturas, setCandidaturas] = useState<Candidatura[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
+
   useDocumentTitle("CIJA - Candidatos às suas Vagas");
+
   useEffect(() => {
     buscarCandidatos();
   }, []);
@@ -92,6 +98,7 @@ const CandidatosEmpresa: React.FC = () => {
     }
   }
 
+  
   // GERA O CURRÍCULO EM PDF EXATAMENTE IGUAL AO DO CLIENTE
   function abrirCurriculo(candidatura: Candidatura) {
     if (!candidatura.curriculo) {
@@ -283,6 +290,50 @@ const CandidatosEmpresa: React.FC = () => {
     janelaImpressao.document.close();
   }
 
+  async function iniciarConversa(idCandidato: string) {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Usuário não autenticado.");
+      return;
+    }
+
+    // Verifica se já existe conversa entre empresa e candidato
+    const { data: conversaExistente, error: erroBusca } = await supabase
+      .from("mensagens")
+      .select("id_msg")
+      .eq("id_em", user.id)
+      .eq("id_ja", idCandidato)
+      .limit(1);
+
+    if (erroBusca) throw erroBusca;
+
+    // Se não existir nenhuma mensagem ainda
+    if (!conversaExistente || conversaExistente.length === 0) {
+      const { error: erroCriacao } = await supabase
+        .from("mensagens")
+        .insert({
+          id_ja: idCandidato,
+          id_em: user.id,
+          enviado_por_jovem: false,
+          conteudo: "Conversa iniciada",
+          lida: false,
+          data_envio: new Date().toISOString(),
+        });
+
+      if (erroCriacao) throw erroCriacao;
+    }
+
+    navigate("/mensagensEmpresa");
+  } catch (error) {
+    console.error("Erro ao iniciar conversa:", error);
+    alert("Não foi possível iniciar a conversa.");
+  }
+}
+
   return (
     <div className={styles.container} style={{ display: "flex", width: "100vw", minHeight: "100vh", backgroundColor: "#09090b" }}>
       <SidebarEmpresa />
@@ -335,22 +386,19 @@ const CandidatosEmpresa: React.FC = () => {
                   <p style={{ color: "#64748b", fontSize: "12px", marginTop: "1rem" }}>
                     Aplicado em: {new Date(candidatura.data_candidatura).toLocaleDateString("pt-BR")}
                   </p>
+                  <div className={styles.botoesAcao}>
                   <button 
                     onClick={() => abrirCurriculo(candidatura)}
-                    style={{ 
-                      width: "100%", 
-                      background: "#a855f7", 
-                      color: "#fff", 
-                      border: "none", 
-                      padding: "10px", 
-                      borderRadius: "4px", 
-                      cursor: "pointer", 
-                      marginTop: "0.5rem", 
-                      fontWeight: "bold" 
-                    }}
+                    className={styles.btnCurriculo}
                   >
                     Ver Currículo (PDF)
                   </button>
+
+                  <button 
+                    onClick={() => iniciarConversa(candidatura.id_candidato)}
+                    className={styles.btnConversa}
+                    >Conversar</button>
+                    </div>
                 </div>
               </div>
             ))}
