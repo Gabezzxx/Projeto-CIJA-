@@ -93,21 +93,25 @@ const Mensagens: React.FC = () => {
 
 
   async function enviar() {
-    if (!texto.trim() || !ativa) return;
+  if (!texto.trim() || !ativa) return;
 
-    await supabase.from("mensagens").insert({
-      id_ja: userId,
-      id_em: ativa,
-      conteudo: texto,
-      enviado_por_jovem: true,
-      lida: false,
-      data_envio: new Date().toISOString(),
-    });
-
-    setTexto("");
-
-    abrir(ativa);
+  if (texto.length > 2000) {
+    alert("A mensagem pode ter no máximo 2000 caracteres.");
+    return;
   }
+
+  await supabase.from("mensagens").insert({
+    id_ja: userId,
+    id_em: ativa,
+    conteudo: texto,
+    enviado_por_jovem: true,
+    lida: false,
+    data_envio: new Date().toISOString(),
+  });
+
+  setTexto("");
+  abrir(ativa);
+}
 
   useEffect(() => {
     if (!ativa || !userId) return;
@@ -134,9 +138,10 @@ const Mensagens: React.FC = () => {
   }, [userId]);
 
   return (
-    <div className={styles.container}>
-      {/* LISTA DE CONVERSAS */}
-      {!ativa && (
+  <div className={styles.container}>
+    {!ativa ? (
+      <>
+        {/* LISTA DE CONVERSAS */}
         <div className={styles.sidebar}>
           <div className={styles.header}>Mensagens</div>
 
@@ -153,56 +158,67 @@ const Mensagens: React.FC = () => {
               className={styles.item}
               onClick={() => abrir(c.id_em)}
             >
-              <img src={c.avatar_url || "/avatar.png"} />
-              <div>
+              <img
+                src={c.avatar_url || "/avatar.png"}
+                alt={c.nome}
+              />
+
+              <div className={styles.info}>
                 <strong>{c.nome}</strong>
                 <p>{c.ultima_msg}</p>
               </div>
             </div>
           ))}
         </div>
-      )}
 
-      {/* CHAT */}
-      {ativa && (
-        <div className={styles.chat}>
-          <div className={styles.top}>
-            <button onClick={() => setAtiva(null)}>←</button>
-            <h3>
-              {conversas.find((c) => c.id_em === ativa)?.nome}
-            </h3>
-          </div>
-
-          <div className={styles.msgs}>
-            {mensagens.map((m) => (
-              <div
-                key={m.id_msg}
-                className={
-                  m.enviado_por_jovem
-                    ? styles.eu
-                    : styles.empresa
-                }
-              >
-                {m.conteudo}
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.input}>
-            <input
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              placeholder="Mensagem..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviar();
-              }}
-            />
-            <button onClick={enviar}>Enviar</button>
-          </div>
+        {/* TELA VAZIA */}
+        <div className={styles.empty}>
+          <h2>Comece a conversar</h2>
+          <p>Selecione uma conversa para visualizar as mensagens.</p>
         </div>
-      )}
-    </div>
-  );
-};
+      </>
+    ) : (
+      /* CHAT */
+      <div className={styles.chat}>
+        <div className={styles.top}>
+          <button onClick={() => setAtiva(null)}>←</button>
+
+          <h3>
+            {conversas.find((c) => c.id_em === ativa)?.nome}
+          </h3>
+        </div>
+
+        <div className={styles.msgs}>
+          {mensagens.map((m) => (
+            <div
+              key={m.id_msg}
+              className={
+                m.enviado_por_jovem
+                  ? styles.msgRight
+                  : styles.msgLeft
+              }
+            >
+              {m.conteudo}
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.input}>
+          <input
+            value={texto}
+            maxLength={2000}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Mensagem..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") enviar();
+            }}
+          />
+
+          <button onClick={enviar}>Enviar</button>
+        </div>
+      </div>
+    )}
+  </div>
+);}
 
 export default Mensagens;
