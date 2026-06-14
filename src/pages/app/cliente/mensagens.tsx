@@ -21,8 +21,13 @@ interface Conversa {
   ultima_msg?: string;
 }
 
+interface Usuario {
+  avatar_url: string | null;
+}
+
 const Mensagens: React.FC = () => {
   const [userId, setUserId] = useState("");
+  const [userData, setUserData] = useState<Usuario>({ avatar_url: null });
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [ativa, setAtiva] = useState<string | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -30,25 +35,33 @@ const Mensagens: React.FC = () => {
   const navigate = useNavigate();
   useDocumentTitle("Mensagens - Cliente");
 
-
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser();
-      if (data.user) setUserId(data.user.id);
+      if (data.user) {
+        setUserId(data.user.id);
+
+        const { data: jovem } = await supabase
+          .from("jovem_aprendiz")
+          .select("avatar_url")
+          .eq("id_ja", data.user.id)
+          .maybeSingle();
+
+        if (jovem) setUserData({ avatar_url: jovem.avatar_url });
+      }
     };
     init();
   }, []);
 
-
-
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function carregarConversas() {
     if (!userId) return;
 
     const { data } = await supabase
       .from("mensagens")
-      .select("id_em, conteudo, data_envio")
+      .select("id_em, conteudo, data_envio,*")
       .eq("id_ja", userId)
+
       .order("data_envio", { ascending: false });
 
     if (!data) return;
@@ -75,10 +88,16 @@ const Mensagens: React.FC = () => {
     setConversas(lista);
   }
 
-
-
   async function abrir(id_em: string) {
     setAtiva(id_em);
+
+    await supabase
+      .from("mensagens")
+      .update({ lida: true })
+      .eq("id_ja", userId)
+      .eq("id_em", id_em)
+      .eq("enviado_por_jovem", false)
+      .eq("lida", false);
 
     const { data } = await supabase
       .from("mensagens")
@@ -90,41 +109,37 @@ const Mensagens: React.FC = () => {
     setMensagens(data || []);
   }
 
-
-
   async function enviar() {
-  if (!texto.trim() || !ativa) return;
+    if (!texto.trim() || !ativa) return;
 
-  if (texto.length > 2000) {
-    alert("A mensagem pode ter no máximo 2000 caracteres.");
-    return;
+    if (texto.length > 2000) {
+      alert("A mensagem pode ter no máximo 2000 caracteres.");
+      return;
+    }
+
+    await supabase.from("mensagens").insert({
+      id_ja: userId,
+      id_em: ativa,
+      conteudo: texto,
+      enviado_por_jovem: true,
+      lida: false,
+      data_envio: new Date().toISOString(),
+    });
+
+    setTexto("");
+    abrir(ativa);
   }
-
-  await supabase.from("mensagens").insert({
-    id_ja: userId,
-    id_em: ativa,
-    conteudo: texto,
-    enviado_por_jovem: true,
-    lida: false,
-    data_envio: new Date().toISOString(),
-  });
-
-  setTexto("");
-  abrir(ativa);
-}
 
   useEffect(() => {
     if (!ativa || !userId) return;
 
     const interval = setInterval(() => {
       abrir(ativa);
-    }, 3000); // 3s
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [ativa, userId]);
 
-
-  // polling
   useEffect(() => {
     if (!userId) return;
 
@@ -132,93 +147,132 @@ const Mensagens: React.FC = () => {
 
     const interval = setInterval(() => {
       carregarConversas();
-    }, 10000); // 10s
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [carregarConversas, userId]);
+
+  const conversaAtual = conversas.find((c) => c.id_em === ativa);
 
   return (
-  <div className={styles.container}>
-    {!ativa ? (
-      <>
-        {/* LISTA DE CONVERSAS */}
-        <div className={styles.sidebar}>
-          <div className={styles.header}>Mensagens</div>
+    <div className={styles.container}>
+      {!ativa ? (
+        <>
+          <div className={styles.sidebar}>
+            <div className={styles.header}>Mensagens</div>
 
-          <div
-            className={styles.backButton}
-            onClick={() => navigate(-1)}
-          >
-            ← Voltar
+            <div className={styles.backButton} onClick={() => navigate(-1)}>
+              ← Voltar
+            </div>
+
+            {conversas.map((c) => (
+              <div
+                key={c.id_em}
+                className={styles.item}
+                onClick={() => abrir(c.id_em)}
+              >
+                <img
+                  src={c.avatar_url || "/avatar.png"}
+                  alt={c.nome}
+                  className={styles.avatar}
+                />
+
+                <div className={styles.info}>
+                  <strong>{c.nome}</strong>
+                  <p>{c.ultima_msg}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {conversas.map((c) => (
-            <div
-              key={c.id_em}
-              className={styles.item}
-              onClick={() => abrir(c.id_em)}
-            >
-              <img
-                src={c.avatar_url || "/avatar.png"}
-                alt={c.nome}
-              />
+          <div className={styles.empty}>
+            <h2>Comece a conversar</h2>
+            <p>Selecione uma conversa para visualizar as mensagens.</p>
+          </div>
+        </>
+      ) : (
+        <div className={styles.chat}>
+          <div className={styles.top}>
+            <button onClick={() => setAtiva(null)}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
 
-              <div className={styles.info}>
-                <strong>{c.nome}</strong>
-                <p>{c.ultima_msg}</p>
+            <div className={styles.chatPerfil}>
+              <img
+                src={conversaAtual?.avatar_url || "/avatar.png"}
+                alt={conversaAtual?.nome}
+                className={styles.chatAvatar}
+              />
+              <div className={styles.chatInfo}>
+                <h3>{conversaAtual?.nome}</h3>
+                <span>Empresa</span>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* TELA VAZIA */}
-        <div className={styles.empty}>
-          <h2>Comece a conversar</h2>
-          <p>Selecione uma conversa para visualizar as mensagens.</p>
-        </div>
-      </>
-    ) : (
-      /* CHAT */
-      <div className={styles.chat}>
-        <div className={styles.top}>
-          <button onClick={() => setAtiva(null)}>←</button>
+          <div className={styles.msgs}>
+            {mensagens.map((m) => (
+              <div
+                key={m.id_msg}
+                className={
+                  m.enviado_por_jovem ? styles.msgRowRight : styles.msgRowLeft
+                }
+              >
+                {!m.enviado_por_jovem && (
+                  <img
+                    src={conversaAtual?.avatar_url || "/avatar.png"}
+                    alt="Empresa"
+                    className={styles.msgAvatar}
+                  />
+                )}
+                <div
+                  className={
+                    m.enviado_por_jovem ? styles.msgRight : styles.msgLeft
+                  }
+                >
+                  {m.conteudo}
+                </div>
+                {m.enviado_por_jovem && (
+                  <img
+                    src={userData.avatar_url || "/avatar.png"}
+                    alt="Você"
+                    className={styles.msgAvatar}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
-          <h3>
-            {conversas.find((c) => c.id_em === ativa)?.nome}
-          </h3>
-        </div>
+          <div className={styles.input}>
+            <input
+              value={texto}
+              maxLength={2000}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Mensagem..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  enviar();
+                }
+              }}
+            />
 
-        <div className={styles.msgs}>
-          {mensagens.map((m) => (
-            <div
-              key={m.id_msg}
-              className={
-                m.enviado_por_jovem
-                  ? styles.msgRight
-                  : styles.msgLeft
-              }
-            >
-              {m.conteudo}
-            </div>
-          ))}
+            <button onClick={enviar}>Enviar</button>
+          </div>
         </div>
-
-        <div className={styles.input}>
-          <input
-            value={texto}
-            maxLength={2000}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Mensagem..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") enviar();
-            }}
-          />
-
-          <button onClick={enviar}>Enviar</button>
-        </div>
-      </div>
-    )}
-  </div>
-);}
+      )}
+    </div>
+  );
+};
 
 export default Mensagens;

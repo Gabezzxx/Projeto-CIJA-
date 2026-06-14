@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styles from "./Sidebar.module.css";
 import cijaLogo from "../../assets/logo2.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
+
+interface Mensagem {
+  id_msg: string;
+  id_ja: string;
+  id_em: string;
+  enviado_por_jovem: boolean;
+  conteudo: string;
+  data_envio: string;
+  lida: boolean;
+}
 
 // Ícones JobHub - outline 2px
 const HomeIcon = () => (
@@ -122,12 +132,13 @@ type MenuItem = {
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [userId, setUserId] = useState("");
+  const [naoLidas, setNaoLidas] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [targetPath, setTargetPath] = useState<string | null>(null);
-  const [unreadMessages, setUnreadMessages] = useState(0);
 
-  // ADICIONADO: Adiciona classe no body quando sidebar abre no mobile
+  // Adiciona classe no body quando sidebar abre no mobile
   useEffect(() => {
     if (isOpen && window.innerWidth <= 992) {
       document.body.classList.add(styles.sidebarOpenBody);
@@ -141,12 +152,41 @@ export const Sidebar: React.FC = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    const fetchUnread = async () => {
-      // Troque pela sua query real do Supabase
-      setUnreadMessages(3); // mock igual ao print
+    const init = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) setUserId(data.user.id);
     };
-    fetchUnread();
+    init();
   }, []);
+
+  const carregarNaoLidas = useCallback(async () => {
+    if (!userId) return;
+
+    const { count } = await supabase
+      .from("mensagens")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq("id_ja", userId)
+      .eq("enviado_por_jovem", false)
+      .eq("lida", false);
+
+    setNaoLidas(count || 0);
+  }, [userId]);
+
+  // Polling de mensagens não lidas
+  useEffect(() => {
+    if (!userId) return;
+
+    carregarNaoLidas();
+
+    const interval = setInterval(() => {
+      carregarNaoLidas();
+    }, 2000); // 2s
+
+    return () => clearInterval(interval);
+  }, [carregarNaoLidas, userId]);
 
   const menuItems: MenuItem[] = [
     { label: "Dashboard", path: "/clientDashboard", icon: <HomeIcon /> },
@@ -166,7 +206,7 @@ export const Sidebar: React.FC = () => {
       label: "Mensagens",
       path: "/mensagens",
       icon: <MailIcon />,
-      badge: unreadMessages,
+      badge: naoLidas,
     },
     { label: "Meu Perfil", path: "/perfil", icon: <UserIcon /> },
   ];

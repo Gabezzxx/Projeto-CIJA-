@@ -21,7 +21,6 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
   align-items: center;
   margin-bottom: 40px;
   gap: 24px;
@@ -50,14 +49,12 @@
   border: 1px solid #6d28d9;
   padding: 8px 16px 8px 8px;
   border-radius: 12px;
-  
   transition: all 0.25s ease;
 }
 
 .userCard:hover {
- box-shadow: 0 2px 8px rgba(199, 198, 198, 0.2);
+  box-shadow: 0 2px 8px rgba(199, 198, 0.2);
   cursor: pointer;
-
 }
 
 .userAvatar {
@@ -243,7 +240,7 @@
   transition: all 0.15s;
 }
 
-.actionItem:hover.checkbox {
+.actionItem:hover .checkbox {
   border-color: #52525b;
 }
 
@@ -330,7 +327,7 @@
   font-weight: 500;
 }
 
-.tab.active.tabCount {
+.tab.active .tabCount {
   background: rgba(124, 58, 237, 0.15);
   color: #a78bfa;
 }
@@ -449,6 +446,14 @@
   padding: 48px 24px;
 }
 
+.emptyState svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  stroke: #3f3f46;
+  opacity: 0.5;
+}
+
 .emptyTitle {
   font-size: 16px;
   font-weight: 600;
@@ -467,6 +472,96 @@
   padding: 24px;
 }
 
+/* EMPRESA CARD - ABA DE EMPRESAS */
+.empresaCard {
+  padding: 20px 24px;
+  background: #0c0c0e;
+  border: 1px solid #1f1f23;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.15s ease;
+  gap: 24px;
+}
+
+.empresaCard:hover {
+  background: #111113;
+  border-color: #27272f;
+}
+
+.empresaContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.empresaHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.empresaLogo {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid rgba(124, 58, 237, 0.3);
+}
+
+.empresaLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.empresaLogo svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
+}
+
+.empresaNome {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 4px 0;
+}
+
+.empresaMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+.empresaMeta svg {
+  width: 14px;
+  height: 14px;
+  stroke: #7c3aed;
+  flex-shrink: 0;
+}
+
+.empresaDesc {
+  color: #9ca3af;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 12px 0 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @media (max-width: 1024px) {
   .main {
     margin-left: 0;
@@ -481,10 +576,10 @@
 @media (max-width: 768px) {
   .headerLeft h1 {
     font-size: 24px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .headerLeft p {
     text-align: center;
@@ -499,7 +594,8 @@
   .header {
     flex-direction: column;
   }
-  .vagaCard {
+  .vagaCard,
+  .empresaCard {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
@@ -509,5 +605,9 @@
   }
   .btnCandidatar {
     width: 100%;
+  }
+  .empresaHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

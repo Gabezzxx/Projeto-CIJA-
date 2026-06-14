@@ -391,7 +391,7 @@ const CandidatosEmpresa: React.FC = () => {
                     onClick={() => abrirCurriculo(candidatura)}
                     className={styles.btnCurriculo}
                   >
-                    Ver Currículo (PDF)
+                    Ver Currículo
                   </button>
 
                   <button 

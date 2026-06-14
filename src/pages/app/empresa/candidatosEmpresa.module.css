@@ -1,20 +1,25 @@
 .container {
   display: flex;
   min-height: 100vh;
-  background-color: #0c0b14; /* Cor de fundo escura idêntica ao seu projeto */
+  background-color: #0c0b14;
   font-family: sans-serif;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .main {
   flex: 1;
-  /* IMPORTANTE: Ajuste este valor se a sua barra lateral for mais larga ou mais estreita */
-  margin-left: 260px; 
   padding: 3rem 2rem;
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .headerArea {
   margin-bottom: 2.5rem;
+  width: 100%;
 }
 
 .headerArea h1 {
@@ -22,12 +27,15 @@
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
   font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .headerArea p {
   color: #94a3b8;
   font-size: 1rem;
   margin: 0;
+  line-height: 1.5;
 }
 
 .loading {
@@ -46,6 +54,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
+  width: 100%;
 }
 
 /* Estilo do Card do Candidato */
@@ -57,7 +66,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .cardCandidato:hover {
@@ -70,6 +84,8 @@
   font-size: 1.25rem;
   margin: 0 0 1rem 0;
   font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .cardBody {
@@ -77,10 +93,14 @@
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 1.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .cardBody p {
   margin: 0.4rem 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .cardBody strong {
@@ -92,6 +112,7 @@
   font-size: 0.8rem;
   color: #64748b;
   margin-top: 1rem;
+  word-break: break-word;
 }
 
 /* Botão roxo customizado */
@@ -106,6 +127,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .btnVerCurriculo:hover {
@@ -116,6 +138,8 @@
   display: flex;
   gap: 0.75rem;
   margin-top: 0.75rem;
+  flex-direction: column;
+  width: 100%;
 }
 
 .btnConversa {
@@ -129,8 +153,92 @@
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .btnConversa:hover {
   background-color: #117722;
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 768px) {
+  .main {
+    padding: 1.5rem 1rem;
+    margin-left: 0;
+  }
+
+  .headerArea {
+    margin-bottom: 1.5rem;
+  }
+
+  .headerArea h1 {
+    font-size: 1.5rem;
+  }
+
+  .headerArea p {
+    font-size: 0.9rem;
+  }
+
+  .candidatosGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .cardCandidato {
+    padding: 1.25rem;
+  }
+
+  .cardHeader h2 {
+    font-size: 1.1rem;
+  }
+
+  .cardBody {
+    font-size: 0.9rem;
+  }
+
+  .botoesAcao {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 1rem 0.75rem;
+  }
+
+  .headerArea {
+    margin-bottom: 1.25rem;
+  }
+
+  .headerArea h1 {
+    font-size: 1.25rem;
+  }
+
+  .headerArea p {
+    font-size: 0.85rem;
+  }
+
+  .cardCandidato {
+    padding: 1rem;
+  }
+
+  .cardHeader h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .cardBody {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .btnVerCurriculo,
+  .btnConversa {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .dataTag {
+    font-size: 0.75rem;
+  }
 }

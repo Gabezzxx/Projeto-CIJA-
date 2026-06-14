@@ -5,6 +5,93 @@ import styles from "./clientDash.module.css";
 import { supabase } from "supabaseClient";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
 
+interface Empresa {
+  id_em: string;
+  nome: string;
+  descricao: string;
+  cidade: string;
+  estado: string;
+  avatarempresa_url: string | null;
+}
+
+interface Vaga {
+  id_vag: string;
+  id_em: string;
+  titulo: string;
+  descricao: string;
+  carga_horaria: number;
+  salario: number;
+  data_publicada: string;
+  cidade: string;
+  estado: string;
+  tipo: string;
+  contrato: string;
+  empresa: Empresa | null;
+  is_favorita?: boolean;
+}
+
+interface Filtros {
+  busca: string;
+  tipo: string;
+  contrato: string;
+  cidade: string;
+  salarioMin: number;
+  salarioMax: number;
+}
+
+const MapPinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+const ClockIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+const BriefcaseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  </svg>
+);
+const DollarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+const BookmarkIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+  </svg>
+);
+const FilterIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+const XIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const BuildingIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+    <path d="M9 9h.01M9 12h.01M9 15h.01M15 12h.01M15 15h.01" />
+  </svg>
+);
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [perfil, setPerfil] = useState({ nome: "", avatar_url: "", id: "" });
@@ -13,6 +100,22 @@ const Dashboard: React.FC = () => {
   useDocumentTitle("CIJA - Dashboard Jovem Aprendiz");
   const [loading, setLoading] = useState(true);
   const [vagas, setVagas] = useState<any[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
+  const [tabAtiva, setTabAtiva] = useState<"vagas" | "empresas" | "mensagens">(
+    "vagas",
+  );
+
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [sortBy, setSortBy] = useState<"recentes" | "salario">("recentes");
+  const [filtros, setFiltros] = useState<Filtros>({
+    busca: "",
+    tipo: "",
+    contrato: "",
+    cidade: "",
+    salarioMin: 0,
+    salarioMax: 20000,
+  });
 
   useEffect(() => {
     (async () => {
@@ -92,11 +195,19 @@ const Dashboard: React.FC = () => {
         setPercent(finalPct);
         setChecks(newChecks);
 
+        // BUSCA MENSAGENS NÃO LIDAS
+        const { count } = await supabase
+          .from("mensagens")
+          .select("*", { count: "exact", head: true })
+          .eq("id_destinatario", user.id)
+          .eq("lida", false);
+        setMensagensNaoLidas(count || 0);
+
         if (finalPct >= 100) {
           const { data: vagasData, error } = await supabase
             .from("vaga")
             .select(
-              "id_vag, titulo, descricao, salario, carga_horaria, data_publicada, id_em",
+              "id_vag, titulo, descricao, salario, carga_horaria, data_publicada, id_em, cidade, estado, tipo, contrato",
             )
             .order("data_publicada", { ascending: false })
             .limit(3);
@@ -104,33 +215,45 @@ const Dashboard: React.FC = () => {
           if (error) {
             console.error("Erro vagas:", error);
           } else if (vagasData) {
-            const vagasComEmpresa = await Promise.all(
-              vagasData.map(async (vaga) => {
-                if (vaga.id_em) {
-                  const { data: empresa } = await supabase
-                    .from("empresa")
-                    .select("nome_fantasia, razao_social")
-                    .eq("id_em", vaga.id_em)
-                    .maybeSingle();
-                  return {
-                    ...vaga,
-                    id: vaga.id_vag,
-                    empresa:
-                      empresa?.nome_fantasia ||
-                      empresa?.razao_social ||
-                      "Empresa Parceira",
-                    localizacao: "São Paulo, SP",
-                  };
-                }
-                return {
-                  ...vaga,
-                  id: vaga.id_vag,
-                  empresa: "Empresa Parceira",
-                  localizacao: "São Paulo, SP",
-                };
-              }),
+            const idsEmpresas = Array.from(
+              new Set(vagasData.map((v) => v.id_em).filter(Boolean)),
             );
+
+            // BUSCA DA TABELA EMPRESA CERTA
+            const { data: empresasData } = await supabase
+              .from("empresa")
+              .select(
+                "id_em, nome, descricao, cidade, estado, avatarempresa_url",
+              )
+              .in("id_em", idsEmpresas);
+
+            const empresasMap = new Map<string, Empresa>();
+            empresasData?.forEach((e: Empresa) => empresasMap.set(e.id_em, e));
+
+            const vagasComEmpresa = vagasData.map((vaga) => {
+              const empresa = empresasMap.get(vaga.id_em);
+              return {
+                ...vaga,
+                id: vaga.id_vag,
+                empresa: empresa || {
+                  nome: "Empresa Parceira",
+                  cidade: vaga.cidade,
+                  estado: vaga.estado,
+                  avatarempresa_url: null,
+                },
+                localizacao: `${vaga.cidade}, ${vaga.estado}`,
+              };
+            });
+
             setVagas(vagasComEmpresa);
+
+            // PEGA NO MÁXIMO 3 EMPRESAS ÚNICAS
+            const empresasUnicas = Array.from(
+              new Map(
+                empresasData?.slice(0, 3).map((e) => [e.id_em, e]),
+              ).values(),
+            );
+            setEmpresas(empresasUnicas);
           }
         }
       } catch (e) {
@@ -358,107 +481,177 @@ const Dashboard: React.FC = () => {
           >
             <h3 className={styles.cardTitle}>Oportunidades</h3>
           </div>
+
           <div className={styles.tabs}>
-            <button className={`${styles.tab} ${styles.active}`}>
+            <button
+              className={`${styles.tab} ${tabAtiva === "vagas" ? styles.active : ""}`}
+              onClick={() => setTabAtiva("vagas")}
+            >
               Vagas Recomendadas{" "}
               <span className={styles.tabCount}>
                 {vagasLiberadas ? vagas.length : 0}
               </span>
             </button>
-            <button className={styles.tab}>
-              Empresas <span className={styles.tabCount}>0</span>
+
+            <button
+              className={`${styles.tab} ${tabAtiva === "empresas" ? styles.active : ""}`}
+              onClick={() => setTabAtiva("empresas")}
+            >
+              Empresas{" "}
+              <span className={styles.tabCount}>{empresas.length}</span>
             </button>
-            <button className={styles.tab}>
-              Mensagens <span className={styles.tabCount}>0</span>
+
+            <button
+              className={`${styles.tab} ${tabAtiva === "mensagens" ? styles.active : ""}`}
+              onClick={() => setTabAtiva("mensagens")}
+            >
+              Mensagens{" "}
+              <span className={styles.tabCount}>{mensagensNaoLidas}</span>
             </button>
           </div>
 
-          {vagasLiberadas ? (
-            <div style={{ display: "grid", gap: "16px" }}>
-              {vagas.map((vaga) => (
-                <div
-                  key={vaga.id}
-                  className={styles.vagaCard}
-                  onClick={() => navigate(`/vagas/${vaga.id}`)}
-                >
-                  <div className={styles.vagaContent}>
-                    <div className={styles.vagaHeader}>
-                      <h4 className={styles.vagaTitle}>{vaga.titulo}</h4>
-                      <span className={styles.vagaBadge}>Nova</span>
+          {tabAtiva === "vagas" &&
+            (vagasLiberadas ? (
+              <div style={{ display: "grid", gap: "16px" }}>
+                {vagas.map((vaga) => (
+                  <div
+                    key={vaga.id}
+                    className={styles.vagaCard}
+                    onClick={() => navigate(`/vagas/${vaga.id}`)}
+                  >
+                    <div className={styles.vagaContent}>
+                      <div className={styles.vagaHeader}>
+                        <h4 className={styles.vagaTitle}>{vaga.titulo}</h4>
+                        <span className={styles.vagaBadge}>Nova</span>
+                      </div>
+                      <div className={styles.vagaMeta}>
+                        <span className={styles.vagaMetaItem}>
+                          {vaga.empresa?.nome}
+                        </span>
+                        <span className={styles.vagaMetaItem}>•</span>
+                        <span className={styles.vagaMetaItem}>
+                          {vaga.localizacao}
+                        </span>
+                        <span className={styles.vagaMetaItem}>•</span>
+                        <span className={styles.vagaMetaItem}>
+                          {vaga.carga_horaria}h semanais
+                        </span>
+                        <span className={styles.vagaMetaItem}>•</span>
+                        <span className={styles.vagaMetaItem}>
+                          {vaga.contrato}
+                        </span>
+                        <span className={styles.vagaMetaItem}>•</span>
+                        <span
+                          className={`${styles.vagaMetaItem} ${styles.vagaSalario}`}
+                        >
+                          R${" "}
+                          {Number(vaga.salario).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className={styles.vagaMeta}>
-                      <span className={styles.vagaMetaItem}>
-                        {vaga.empresa}
-                      </span>
-                      <span className={styles.vagaMetaItem}>•</span>
-                      <span className={styles.vagaMetaItem}>
-                        {vaga.localizacao}
-                      </span>
-                      <span className={styles.vagaMetaItem}>•</span>
-                      <span className={styles.vagaMetaItem}>
-                        {vaga.carga_horaria}h semanais
-                      </span>
-                      <span className={styles.vagaMetaItem}>•</span>
-                      <span
-                        className={`${styles.vagaMetaItem} ${styles.vagaSalario}`}
+                    <div className={styles.vagaAction}>
+                      <button
+                        className={styles.btnCandidatar}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/vagas/${vaga.id}`);
+                        }}
                       >
-                        R${" "}
-                        {Number(vaga.salario).toLocaleString("pt-BR", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
+                        Ver detalhes
+                      </button>
                     </div>
                   </div>
-                  <div className={styles.vagaAction}>
-                    <button
-                      className={styles.btnCandidatar}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/vagas/${vaga.id}`);
-                      }}
-                    >
-                      Ver detalhes
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                className={styles.btnVerTodas}
-                onClick={() => navigate("/vagas")}
-              >
-                Ver todas as vagas
-              </button>
-            </div>
-          ) : (
-            <div className={styles.emptyState}>
-              <h4 className={styles.emptyTitle}>Complete seu perfil</h4>
-              <p className={styles.emptyDesc}>
-                Finalize seu cadastro para visualizar vagas personalizadas
-              </p>
-              <div style={{ marginTop: 24 }}>
-                <div
-                  style={{
-                    height: 6,
-                    background: "#0a0a0f",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                    maxWidth: 300,
-                    margin: "0 auto",
-                  }}
+                ))}
+                <button
+                  className={styles.btnVerTodas}
+                  onClick={() => navigate("/vagas")}
                 >
+                  Ver todas as vagas
+                </button>
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <h4 className={styles.emptyTitle}>Complete seu perfil</h4>
+                <p className={styles.emptyDesc}>
+                  Finalize seu cadastro para visualizar vagas personalizadas
+                </p>
+                <div style={{ marginTop: 24 }}>
                   <div
                     style={{
-                      height: "100%",
-                      width: `${percent}%`,
-                      background: "#7c3aed",
-                      transition: "width 0.5s",
+                      height: 6,
+                      background: "#0a0a0f",
+                      borderRadius: 3,
+                      overflow: "hidden",
+                      maxWidth: 300,
+                      margin: "0 auto",
                     }}
-                  />
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${percent}%`,
+                        background: "#7c3aed",
+                        transition: "width 0.5s",
+                      }}
+                    />
+                  </div>
+                  <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 8 }}>
+                    {percent}% concluído
+                  </p>
                 </div>
-                <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 8 }}>
-                  {percent}% concluído
-                </p>
               </div>
+            ))}
+
+          {tabAtiva === "empresas" && (
+            <div style={{ display: "grid", gap: "16px" }}>
+              {empresas.length > 0 ? (
+                empresas.map((emp) => (
+                  <div key={emp.id_em} className={styles.empresaCard}>
+                    <div className={styles.empresaContent}>
+                      <div className={styles.empresaHeader}>
+                        <div className={styles.empresaLogo}>
+                          {emp.avatarempresa_url ? (
+                            <img src={emp.avatarempresa_url} alt={emp.nome} />
+                          ) : (
+                            <BuildingIcon />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className={styles.empresaNome}>{emp.nome}</h4>
+                          <div className={styles.empresaMeta}>
+                            <MapPinIcon />
+                            <span>
+                              {emp.cidade}, {emp.estado}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {emp.descricao && (
+                        <p className={styles.empresaDesc}>{emp.descricao}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.emptyState}>
+                  <BuildingIcon />
+                  <h4 className={styles.emptyTitle}>Nenhuma empresa ainda</h4>
+                  <p className={styles.emptyDesc}>
+                    Complete seu perfil para ver empresas parceiras
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tabAtiva === "mensagens" && (
+            <div className={styles.emptyState}>
+              <h4 className={styles.emptyTitle}>Nenhuma mensagem</h4>
+              <p className={styles.emptyDesc}>
+                Quando empresas entrarem em contato, aparecerá aqui
+              </p>
             </div>
           )}
         </div>

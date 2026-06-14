@@ -3,9 +3,96 @@ import { useNavigate } from "react-router-dom";
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import { supabase } from "supabaseClient";
 import styles from "./perfil.module.css";
+import { useParams } from "react-router-dom";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+
+const phone = (v: string) => {
+  if (!v) return "—";
+  const d = v.replace(/\D/g, "");
+  return d.length === 11
+    ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+    : v;
+};
+
+const calc = (user: any, cv: any) => {
+  const checks = {
+    avatar: !!user.avatar_url,
+    nome: (user.nome || "").trim().length > 3,
+    email: !!user.email,
+    tel: (user.telefone ||= "").replace(/\D/g, "").length >= 10,
+    desc: 0,
+    skills: 0,
+    formacao: 0,
+    experiencia: 0,
+  };
+
+  const descLen = cv.descricao?.trim().length || 0;
+  checks.desc =
+    descLen >= 100
+      ? 20
+      : descLen >= 50
+        ? 15
+        : descLen >= 20
+          ? 8
+          : descLen > 0
+            ? 3
+            : 0;
+
+  const skills =
+    cv.competencias?.split(",").filter((s: string) => s.trim()).length || 0;
+  checks.skills = Math.min(skills * 3, 15);
+
+  try {
+    const form = JSON.parse(cv.curso || "[]");
+    checks.formacao =
+      Array.isArray(form) && form.length > 0 ? (form.length >= 2 ? 15 : 10) : 0;
+  } catch {
+    checks.formacao = 0;
+  }
+
+  try {
+    const exp = JSON.parse(cv.experiencias || "{}");
+    const expList = exp.experiencias || [];
+    checks.experiencia =
+      expList.length >= 2 ? 20 : expList.length === 1 ? 12 : 0;
+  } catch {
+    checks.experiencia = 0;
+  }
+
+  const pct = Math.min(
+    15 +
+      5 +
+      5 +
+      5 +
+      checks.desc +
+      checks.skills +
+      checks.formacao +
+      checks.experiencia,
+    100,
+  );
+
+  return {
+    percent: pct,
+    details: {
+      avatar: { pts: checks.avatar ? 15 : 0, max: 15, done: checks.avatar },
+      nome: { pts: checks.nome ? 5 : 0, max: 5, done: checks.nome },
+      email: { pts: checks.email ? 5 : 0, max: 5, done: checks.email },
+      tel: { pts: checks.tel ? 5 : 0, max: 5, done: checks.tel },
+      desc: { pts: checks.desc, max: 20, done: descLen >= 100, chars: descLen },
+      skills: { pts: checks.skills, max: 15, done: skills >= 5, count: skills },
+      formacao: { pts: checks.formacao, max: 15, done: checks.formacao === 15 },
+      experiencia: {
+        pts: checks.experiencia,
+        max: 20,
+        done: checks.experiencia === 20,
+      },
+    },
+  };
+};
+
 export default function Perfil() {
   const navigate = useNavigate();
+  const { idJa } = useParams<{ idJa?: string }>();
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
   const [profile, setProfile] = useState({
@@ -23,20 +110,31 @@ export default function Perfil() {
   const [saving, setSaving] = useState(false);
   const [avatarVersion, setAvatarVersion] = useState(0);
 
+  const visualizacaoEmpresa = !!idJa;
+
   useEffect(() => {
     init();
-  }, []);
+  }, [idJa]);
 
   const init = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
+
+    if (!user && !idJa) {
       setLoading(false);
       return;
     }
-    setUid(user.id);
-    await loadProfile(user.id, user.email || "");
+
+    const perfilId = idJa ?? user?.id ?? null;
+
+    if (!perfilId) {
+      setLoading(false);
+      return;
+    }
+
+    setUid(perfilId);
+    await loadProfile(perfilId, user?.email || "");
   };
 
   const loadProfile = async (userId: string, userEmail: string) => {
@@ -54,7 +152,6 @@ export default function Perfil() {
           .maybeSingle(),
       ]);
 
-      // PEGA FOTO DO BANCO (testa todos os campos possíveis)
       let avatarUrl = "";
       if (p.data) {
         avatarUrl =
@@ -64,12 +161,10 @@ export default function Perfil() {
           p.data.photo_url ||
           "";
 
-        // Se não tem no banco, tenta buscar no storage direto
         if (!avatarUrl) {
           const { data: storageData } = supabase.storage
             .from("avatars")
             .getPublicUrl(`${userId}/avatar.jpg`);
-          // Verifica se existe
           try {
             const res = await fetch(storageData.publicUrl, {
               method: "HEAD",
@@ -105,13 +200,6 @@ export default function Perfil() {
     }
   };
 
-  const phone = (t: string) => {
-    const n = t.replace(/\D/g, "");
-    return n.length >= 10
-      ? `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7, 11)}`
-      : t;
-  };
-
   const exp = useMemo(() => {
     try {
       return JSON.parse(cv.exp).experiencias || [];
@@ -142,83 +230,20 @@ export default function Perfil() {
     }
   }, [cv.exp]);
 
-  const pctData = useMemo(() => {
-    const details = {
-      avatar: { pts: 0, max: 15, done: false },
-      nome: { pts: 0, max: 5, done: false },
-      email: { pts: 0, max: 5, done: false },
-      tel: { pts: 0, max: 5, done: false },
-      desc: { pts: 0, max: 20, done: false, chars: 0 },
-      skills: { pts: 0, max: 15, done: false, count: 0 },
-      formacao: { pts: 0, max: 15, done: false, count: 0 },
-      experiencia: { pts: 0, max: 20, done: false, count: 0 },
-    };
-
-    if (profile.avatar) {
-      details.avatar.pts = 15;
-      details.avatar.done = true;
-    }
-    if (profile.nome?.length > 3) {
-      details.nome.pts = 5;
-      details.nome.done = true;
-    }
-    if (profile.email) {
-      details.email.pts = 5;
-      details.email.done = true;
-    }
-    if (profile.tel?.length >= 10) {
-      details.tel.pts = 5;
-      details.tel.done = true;
-    }
-
-    const descLen = cv.desc?.trim().length || 0;
-    details.desc.chars = descLen;
-    if (descLen >= 100) {
-      details.desc.pts = 20;
-      details.desc.done = true;
-    } else if (descLen >= 50) {
-      details.desc.pts = 15;
-    } else if (descLen >= 20) {
-      details.desc.pts = 8;
-    } else if (descLen > 0) {
-      details.desc.pts = 3;
-    }
-
-    details.skills.count = skills.length;
-    details.skills.pts = Math.min(skills.length * 3, 15);
-    details.skills.done = skills.length >= 5;
-
-    details.formacao.count = cur.length;
-    if (cur.length >= 2) {
-      details.formacao.pts = 15;
-      details.formacao.done = true;
-    } else if (cur.length === 1) {
-      details.formacao.pts = 10;
-    }
-
-    details.experiencia.count = exp.length;
-    if (exp.length >= 2) {
-      details.experiencia.pts = 20;
-      details.experiencia.done = true;
-    } else if (exp.length === 1) {
-      details.experiencia.pts = 12;
-    }
-
-    const total = Object.values(details).reduce((sum, d) => sum + d.pts, 0);
-    return { percent: Math.min(total, 100), details };
-  }, [profile, cv, skills, exp, cur]);
-
+  const pctData = useMemo(
+    () => calc(profile, cv),
+    [profile, cv, skills, exp, cur],
+  );
   const pct = pctData.percent;
 
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !uid) return;
+    if (!file || !uid || visualizacaoEmpresa) return;
 
     const previewUrl = URL.createObjectURL(file);
     setProfile((p) => ({ ...p, avatar: previewUrl }));
 
     try {
-      // Converte para jpg 400x400
       const blob = await new Promise<Blob>((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -236,8 +261,6 @@ export default function Perfil() {
       });
 
       const filePath = `${uid}/avatar.jpg`;
-
-      // Remove antigo e faz upload
       await supabase.storage.from("avatars").remove([filePath]);
       const { error: uploadError } = await supabase.storage
         .from("avatars")
@@ -245,13 +268,11 @@ export default function Perfil() {
 
       if (uploadError) throw uploadError;
 
-      // Pega URL pública
       const { data: urlData } = supabase.storage
         .from("avatars")
         .getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl;
 
-      // Salva em TODOS os campos possíveis do banco
       const { error: dbError } = await supabase
         .from("jovem_aprendiz")
         .update({
@@ -264,22 +285,19 @@ export default function Perfil() {
 
       if (dbError) throw dbError;
 
-      // Atualiza na tela com cache bust
       const finalUrl = `${publicUrl}?v=${Date.now()}`;
       setProfile((p) => ({ ...p, avatar: finalUrl }));
       setAvatarVersion((v) => v + 1);
-
-      // Recarrega do banco para confirmar
       setTimeout(() => loadProfile(uid, profile.email), 1000);
     } catch (err: any) {
       console.error("Erro upload:", err);
       alert("Erro ao enviar foto: " + err.message);
-      loadProfile(uid, profile.email); // Restaura
+      loadProfile(uid, profile.email);
     }
   };
 
   const saveSummary = async () => {
-    if (!uid) return;
+    if (!uid || visualizacaoEmpresa) return;
     setSaving(true);
     try {
       const { error } = await supabase.from("curriculo").upsert(
@@ -326,7 +344,7 @@ export default function Perfil() {
   if (loading)
     return (
       <div className={styles.page}>
-        <Sidebar />
+        {!visualizacaoEmpresa && <Sidebar />}
         <main className={styles.main}>
           <div style={{ padding: 40, color: "#9CA3AF" }}>
             Carregando perfil...
@@ -337,36 +355,47 @@ export default function Perfil() {
 
   const avatarSrc = profile.avatar
     ? `${profile.avatar}${profile.avatar.includes("?") ? "&" : "?"}v=${avatarVersion}`
-    : " https://www.gravatar.com/avatar/00000000000000000000?d=mp&f=y";
+    : "https://www.gravatar.com/avatar/00000000000000000000?d=mp&f=y";
 
   return (
     <div className={styles.page}>
-      <Sidebar />
+      {!visualizacaoEmpresa && <Sidebar />}
       <main className={styles.main}>
         <div className={styles.topBar}>
           <div className={styles.topText}>
-            <h1>Revise e complete seu currículo</h1>
-            <p>Mantenha suas informações atualizadas e aumente suas chances</p>
+            <h1>
+              {visualizacaoEmpresa
+                ? "Perfil do Candidato"
+                : "Revise e complete seu currículo"}
+            </h1>
+            <p>
+              {visualizacaoEmpresa
+                ? "Visualizando perfil"
+                : "Mantenha suas informações atualizadas e aumente suas chances"}
+            </p>
           </div>
-          <button
-            className={styles.editBtn}
-            onClick={() => navigate("/curriculo")}
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+
+          {!visualizacaoEmpresa && (
+            <button
+              className={styles.editBtn}
+              onClick={() => navigate("/curriculo")}
             >
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 2.12L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-            Editar currículo
-          </button>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 2.12L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Editar currículo
+            </button>
+          )}
         </div>
 
         <div className={styles.grid}>
@@ -374,28 +403,30 @@ export default function Perfil() {
             <div className={styles.profileMain}>
               <div className={styles.avatarBox}>
                 <img key={avatarVersion} src={avatarSrc} alt={profile.nome} />
-                <label className={styles.camBtn} title="Trocar foto">
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={uploadAvatar}
-                  />
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="M21 15l-5-5L5 21" />
-                  </svg>
-                </label>
+                {!visualizacaoEmpresa && (
+                  <label className={styles.camBtn} title="Trocar foto">
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={uploadAvatar}
+                    />
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  </label>
+                )}
               </div>
               <div className={styles.profileInfo}>
                 <h2>{profile.nome || "Seu Nome"}</h2>
@@ -495,9 +526,11 @@ export default function Perfil() {
           <section className={`${styles.card} ${styles.aboutCard}`}>
             <div className={styles.cardHeader}>
               <h3>Sobre {editing && `(${descLen})`}</h3>
-              <button onClick={() => setEditing(!editing)} disabled={saving}>
-                {editing ? "Cancelar" : "Editar"}
-              </button>
+              {!visualizacaoEmpresa && (
+                <button onClick={() => setEditing(!editing)} disabled={saving}>
+                  {editing ? "Cancelar" : "Editar"}
+                </button>
+              )}
             </div>
             {editing ? (
               <>
@@ -560,9 +593,11 @@ export default function Perfil() {
           <section className={`${styles.card} ${styles.eduCard}`}>
             <div className={styles.cardHeader}>
               <h3>Formação acadêmica</h3>
-              <button onClick={() => navigate("/curriculo")}>
-                + Adicionar
-              </button>
+              {!visualizacaoEmpresa && (
+                <button onClick={() => navigate("/curriculo")}>
+                  + Adicionar
+                </button>
+              )}
             </div>
             {cur.length === 0 ? (
               <p
@@ -594,9 +629,11 @@ export default function Perfil() {
           <section className={`${styles.card} ${styles.skillsCard}`}>
             <div className={styles.cardHeader}>
               <h3>Competências</h3>
-              <button onClick={() => navigate("/curriculo")}>
-                + Adicionar
-              </button>
+              {!visualizacaoEmpresa && (
+                <button onClick={() => navigate("/curriculo")}>
+                  + Adicionar
+                </button>
+              )}
             </div>
             <div className={styles.skillList}>
               {skills.length > 0 ? (
@@ -618,9 +655,11 @@ export default function Perfil() {
           <section className={`${styles.card} ${styles.expCard}`}>
             <div className={styles.cardHeader}>
               <h3>Experiência</h3>
-              <button onClick={() => navigate("/curriculo")}>
-                + Adicionar
-              </button>
+              {!visualizacaoEmpresa && (
+                <button onClick={() => navigate("/curriculo")}>
+                  + Adicionar
+                </button>
+              )}
             </div>
             {exp.length === 0 ? (
               <p
@@ -655,51 +694,66 @@ export default function Perfil() {
           <section className={`${styles.card} ${styles.projCard}`}>
             <div className={styles.cardHeader}>
               <h3>Projetos</h3>
-              <button onClick={() => navigate("/curriculo")}>
-                + Adicionar
-              </button>
+              {!visualizacaoEmpresa && (
+                <button onClick={() => navigate("/curriculo")}>
+                  + Adicionar
+                </button>
+              )}
             </div>
             {projs.length === 0 && (
               <div className={styles.emptyProj}>
                 <h4>Nenhum projeto</h4>
-                <button onClick={() => navigate("/curriculo")}>
-                  + Adicionar projeto
-                </button>
+                {!visualizacaoEmpresa && (
+                  <button onClick={() => navigate("/curriculo")}>
+                    + Adicionar projeto
+                  </button>
+                )}
               </div>
             )}
           </section>
 
-          <aside className={`${styles.card} ${styles.actionsCard}`}>
-            <h3>Ações rápidas</h3>
-            <button onClick={() => navigate("/curriculo")}>
-              <div className={styles.actionIcon}>💼</div>
-              <div>
-                <strong>Adicionar experiência</strong>
-                <span>Conte sua trajetória</span>
-              </div>
-            </button>
-            <button onClick={() => navigate("/curriculo")}>
-              <div className={styles.actionIcon}>🎓</div>
-              <div>
-                <strong>Adicionar formação</strong>
-                <span>Cursos e certificações</span>
-              </div>
-            </button>
-            <button onClick={() => navigate("/curriculo")}>
-              <div className={styles.actionIcon}>🚀</div>
-              <div>
-                <strong>Adicionar projeto</strong>
-                <span>Destaque projetos</span>
-              </div>
-            </button>
-            <button onClick={() => navigate("/curriculo")}>
-              <div className={styles.actionIcon}>⚡</div>
-              <div>
-                <strong>Adicionar competência</strong>
-                <span>Suas habilidades</span>
-              </div>
-            </button>
-          </aside>
+          {/* se a empresa tiver vendo perfil do usser tem como voltar */}
+          {visualizacaoEmpresa && (
+            <div className="voltarCard">
+              <button className="voltarButton" onClick={() => navigate("/mensagensEmpresa")}>
+                Voltar{" "}
+              </button>
+            </div>
+          )}
+
+          {!visualizacaoEmpresa && (
+            <aside className={`${styles.card} ${styles.actionsCard}`}>
+              <h3>Ações rápidas</h3>
+              <button onClick={() => navigate("/curriculo")}>
+                <div className={styles.actionIcon}>💼</div>
+                <div>
+                  <strong>Adicionar experiência</strong>
+                  <span>Conte sua trajetória</span>
+                </div>
+              </button>
+              <button onClick={() => navigate("/curriculo")}>
+                <div className={styles.actionIcon}>🎓</div>
+                <div>
+                  <strong>Adicionar formação</strong>
+                  <span>Cursos e certificações</span>
+                </div>
+              </button>
+              <button onClick={() => navigate("/curriculo")}>
+                <div className={styles.actionIcon}></div>
+                <div>
+                  <strong>Adicionar projeto</strong>
+                  <span>Destaque projetos</span>
+                </div>
+              </button>
+              <button onClick={() => navigate("/curriculo")}>
+                <div className={styles.actionIcon}></div>
+                <div>
+                  <strong>Adicionar competência</strong>
+                  <span>Suas habilidades</span>
+                </div>
+              </button>
+            </aside>
+          )}
         </div>
       </main>
     </div>

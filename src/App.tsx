@@ -103,6 +103,17 @@ function App() {
           }
         />
 
+        {/* rota para perfil chat  */}
+
+        <Route
+          path="/perfil/:idJa"
+          element={
+            <ProtectedRoute tipoEsperado="empresa">
+              <Perfil />
+            </ProtectedRoute>
+          }
+        />
+
         {/* =========================================================
             ROTAS DA EMPRESA
            ========================================================= */}
