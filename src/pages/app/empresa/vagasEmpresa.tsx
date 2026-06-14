@@ -12,6 +12,10 @@ interface Vaga {
   carga_horaria: number;
   salario: number;
   data_publicada: string;
+  cidade: string;
+  estado: string; 
+  tipo: string;
+  contrato: string;
 }
 
 export const VagasEmpresa: React.FC = () => {
@@ -26,6 +30,10 @@ export const VagasEmpresa: React.FC = () => {
   useDocumentTitle("CIJA - Vagas da Empresa");
   const [cargaHoraria, setCargaHoraria] = useState<number>(0);
   const [salario, setSalario] = useState<number>(0);
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [tipo, setTipo] = useState("");
+  const [contrato, setContrato] = useState(""); 
 
   useEffect(() => {
     buscarEmpresasEVagas();
@@ -65,12 +73,20 @@ export const VagasEmpresa: React.FC = () => {
       setDescricao(vaga.descricao);
       setCargaHoraria(vaga.carga_horaria);
       setSalario(vaga.salario);
+      setCidade(vaga.cidade);
+      setEstado(vaga.estado);
+      setTipo(vaga.tipo);
+      setContrato(vaga.contrato); 
     } else {
       setEditingVaga(null);
       setTitulo("");
       setDescricao("");
       setCargaHoraria(0);
       setSalario(0);
+      setCidade("");
+      setEstado("");
+      setTipo("");
+      setContrato("");
     }
     setIsVagaOpen(true);
   }
@@ -81,6 +97,12 @@ export const VagasEmpresa: React.FC = () => {
 
     if (Number(cargaHoraria) > 100) {
       alert("A carga horária máxima permitida é de 100 horas semanais.");
+      return;
+    }
+
+    const estadosValidos = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+    if (!estadosValidos.includes(estado.trim().toUpperCase())) {
+      alert("Estado inválido. Use a sigla de dois caracteres (ex: SP, RJ, MG).");
       return;
     }
 
@@ -104,6 +126,10 @@ export const VagasEmpresa: React.FC = () => {
         descricao: descricao.trim(),
         carga_horaria: Number(cargaHoraria),
         salario: Number(salario),
+        cidade: cidade.trim(),
+        estado: estado.trim(),
+        tipo,
+        contrato
       };
 
       if (editingVaga) {
@@ -191,9 +217,14 @@ export const VagasEmpresa: React.FC = () => {
                     </span>
                   </div>
                   <p className={styles.descricaoText}>{vaga.descricao}</p>
-                  
+                  <div className={styles.localizacaoInfo}>
+                <span>{vaga.cidade} - {vaga.estado}</span>
+                </div>  
                   <div className={styles.metaInfo}>
                     <span>{vaga.carga_horaria}h semanais</span>
+                    <span>{vaga.tipo}</span> </div>
+                  <div className={styles.metaInfo}>
+                    <span>{vaga.contrato}</span>
                     <span>R$ {vaga.salario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                   </div>
 
@@ -228,6 +259,7 @@ export const VagasEmpresa: React.FC = () => {
                       maxLength={2000} 
                       required 
                     />
+                    
                     <span style={{ fontSize: "12px", color: "#94a3b8", textAlign: "right", marginTop: "4px" }}>
                       {descricao.length} / 2000 caracteres
                     </span>
@@ -258,7 +290,45 @@ export const VagasEmpresa: React.FC = () => {
                       />
                     </div>
                   </div>
-
+                  <div className={styles.rowInputs}>
+                    <div className={styles.inputGroup}>
+                      <label>Cidade</label>
+                      <input type="text" value={cidade} onChange={(e) => setCidade(e.target.value)} required />
+                    </div>
+                    <div className={styles.inputGroup}>
+                      <label>Estado (Sigla)</label>
+                      <input 
+                        type="text" 
+                        maxLength={2}
+                        value={estado}
+                        onChange={(e) => setEstado(e.target.value.toUpperCase())}
+                        required 
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.rowInputs}>
+                    <div className={styles.inputGroup}>
+                      <label>Tipo de Vaga</label>
+                      <select value={tipo} onChange={(e) => setTipo(e.target.value)} required>
+                        <option value="">Selecione</option>
+                        <option value="Presencial">Presencial</option>
+                        <option value="Remoto">Remoto</option>
+                        <option value="Híbrido">Híbrido</option>
+                      </select>
+                    </div>
+                  </div>
+                    <div className={styles.rowInputs}>
+                    <div className={styles.inputGroup}>
+                      <label>Tipo de Contrato</label>
+                      <select value={contrato} onChange={(e) => setContrato(e.target.value)} required>
+                        <option value="">Selecione</option>
+                        <option value="CLT">CLT</option>
+                        <option value="PJ">PJ</option>
+                        <option value="Estágio">Estágio</option>
+                        <option value="Temporário">Temporário</option>
+                      </select>
+                    </div>
+                  </div>                                
                   <div className={styles.modalAcoes}>
                     <button type="button" className={styles.btnCancelar} onClick={() => setIsVagaOpen(false)}>
                       Cancelar
@@ -270,11 +340,12 @@ export const VagasEmpresa: React.FC = () => {
                 </form>
               </div>
             </div>
+            
           )}
 
           {vagaParaExcluir && (
             <div className={styles.modalOverlay}>
-              <div className={`${styles.modalContainer} ${styles.modalAlerta}`}>\
+              <div className={`${styles.modalContainer} ${styles.modalAlerta}`}>
                 <h3>Remover Vaga</h3>
                 <p>
                   Você tem certeza que quer excluir permanentemente a vaga de{" "}

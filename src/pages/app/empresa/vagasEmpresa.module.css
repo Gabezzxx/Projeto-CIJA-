@@ -228,6 +228,20 @@
   font-weight: 500;
 }
 
+.inputGroup select {
+  background-color: #0b0712;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.inputGroup select:focus {
+  border-color: #5f236b;
+  outline: none;
+}
+
 .inputGroup input,
 .inputGroup textarea {
   background-color: #0b0712;
