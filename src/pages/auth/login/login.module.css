@@ -326,8 +326,24 @@ body::before {
 /* ========================= INPUTS ========================= */
 .inputGroup {
   margin-bottom: 16px;
+  position: relative;
 }
-.inputGroup label {
+.inputGroup input {
+  padding: 0 48px 0 16px;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 88%;
+  top: 60%;
+  transform: translateY(-50%);
+  color: #7f7a8d;
+  pointer-events: none;
+  z-index: 2;
+  width: clamp(20px, 2.5vw, 24px); /*  min 20px, max 24px */
+  height: clamp(20px, 2.5vw, 24px);
+}
+inputGroup label {
   display: block;
   color: white;
   font-size: 0.95rem;
@@ -622,6 +638,17 @@ body::before {
   .statBox p {
     font-size: 0.9rem;
   }
+  .inputIcon {
+    position: absolute;
+    left: 88%;
+    top: 60%;
+    transform: translateY(-50%);
+    color: #7f7a8d;
+    pointer-events: none;
+    z-index: 2;
+    width: clamp(20px, 2.5vw, 24px); /*  min 20px, max 24px */
+    height: clamp(20px, 2.5vw, 24px);
+  }
 
   /* CHECKMARK RESPONSIVO */
   .checkmark {
@@ -638,6 +665,17 @@ body::before {
   .subtitle {
     font-size: 0.95rem;
     margin-bottom: 36px;
+  }
+  .inputIcon {
+    position: absolute;
+    left: 84%;
+    top: 60%;
+    transform: translateY(-50%);
+    color: #7f7a8d;
+    pointer-events: none;
+    z-index: 2;
+    width: clamp(25px, 3.5vw, 25px); /*  min 20px, max 24px */
+    height: clamp(20px, 2.5vw, 24px);
   }
   .card {
     padding: 26px 16px;

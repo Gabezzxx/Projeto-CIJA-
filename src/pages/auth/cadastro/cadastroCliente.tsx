@@ -17,6 +17,15 @@ import {
   formatarTelefone,
 } from "../../../utils/validations/formatter";
 
+import {
+  Mail, // Email
+  Phone, // Telefone
+  User, // CPF/Pessoa
+  MapPin, // Endereço
+  Calendar, // Data
+  ShieldUser, // shield user
+} from "lucide-react";
+
 const errorMessages: { [key: string]: string } = {
   nome: "Digite seu nome completo.",
   cpf: "CPF inválido.",
@@ -188,18 +197,16 @@ export default function CadastroCliente() {
         return;
       }
       const { confirmSenha, ...toSend } = form;
-      const { error: insErr } = await supabase
-        .from("jovem_aprendiz")
-        .insert([
-          {
-            id_ja: authData.user.id,
-            ...toSend,
-            email: emailLower,
-            telefone: `+55${form.telefone.replace(/\D/g, "")}`,
-            cpf: limparCPF(form.cpf),
-            email_confirmado: false,
-          },
-        ]);
+      const { error: insErr } = await supabase.from("jovem_aprendiz").insert([
+        {
+          id_ja: authData.user.id,
+          ...toSend,
+          email: emailLower,
+          telefone: `+55${form.telefone.replace(/\D/g, "")}`,
+          cpf: limparCPF(form.cpf),
+          email_confirmado: false,
+        },
+      ]);
       if (insErr) {
         await supabase.auth.signOut();
         throw insErr;
@@ -288,6 +295,7 @@ export default function CadastroCliente() {
                     onChange={handleChange}
                     className={`${styles.input} ${errors.nome ? styles.error : ""}`}
                   />
+                  <User size={45} className={styles.inputIcon} />
                   {errors.nome && (
                     <p className={styles.errorMessage}>{errors.nome}</p>
                   )}
@@ -302,6 +310,8 @@ export default function CadastroCliente() {
                       onChange={handleChange}
                       className={`${styles.input} ${errors.cpf ? styles.error : ""}`}
                     />
+                    <ShieldUser size={45} className={styles.inputIcon} />
+
                     {cpfValido && (
                       <div className={styles.inputCheckWrapper}>
                         <AnimatedCheckIcon />
@@ -323,6 +333,8 @@ export default function CadastroCliente() {
                     onBlur={(e) => !e.target.value && setDateInputType("text")}
                     className={`${styles.input} ${styles.dateInput} ${errors.data_nasc ? styles.error : ""}`}
                   />
+                  <Calendar size={45} className={styles.inputIcon} />
+
                   {errors.data_nasc && (
                     <p className={styles.errorMessage}>{errors.data_nasc}</p>
                   )}
@@ -336,6 +348,7 @@ export default function CadastroCliente() {
                     onChange={handleChange}
                     className={`${styles.input} ${errors.telefone ? styles.error : ""}`}
                   />
+                  <Phone size={45} className={styles.inputIcon} />
                   {errors.telefone && (
                     <p className={styles.errorMessage}>{errors.telefone}</p>
                   )}
@@ -350,6 +363,7 @@ export default function CadastroCliente() {
                       onChange={handleChange}
                       className={`${styles.input} ${errors.email ? styles.error : ""}`}
                     />
+                    <Mail size={45} className={styles.inputIcon} />
                     {emailValido && (
                       <div className={styles.inputCheckWrapper}>
                         <AnimatedCheckIcon />
@@ -369,6 +383,7 @@ export default function CadastroCliente() {
                     onChange={handleChange}
                     className={`${styles.input} ${errors.endereco ? styles.error : ""}`}
                   />
+                  <MapPin size={45} className={styles.inputIcon} />
                   {errors.endereco && (
                     <p className={styles.errorMessage}>{errors.endereco}</p>
                   )}

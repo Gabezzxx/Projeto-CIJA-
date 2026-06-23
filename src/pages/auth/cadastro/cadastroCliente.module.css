@@ -208,11 +208,10 @@ body {
 
 .titleExclamation {
   color: white;
- 
 
-    margin-left: 0.2rem; /* cola o ! no agora */
-    display: inline; /* garante que fica na mesma linha */
-  
+  margin-left: 0.2rem; /* cola o ! no agora */
+  display: inline; /* garante que fica na mesma linha */
+
   -webkit-text-fill-color: white;
 }
 .tagline {
@@ -298,6 +297,7 @@ form {
 }
 .inputGroup {
   width: 100%;
+  position: relative;
 }
 .inputWrapper {
   position: relative;
@@ -308,11 +308,23 @@ form {
   border-radius: 18px;
   border: 1px solid var(--border);
   background: var(--input);
+  position: relative;
   padding: 0 18px;
   color: white;
   font-size: 0.97rem;
   outline: none;
   transition: 0.25s ease;
+}
+.inputIcon {
+  position: absolute;
+  left: 88%;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7f7a8d;
+  pointer-events: none;
+  z-index: 2;
+  width: clamp(20px, 2.5vw, 24px); /*  min 20px, max 24px */
+  height: clamp(20px, 2.5vw, 24px);
 }
 .input::placeholder {
   color: #67677d;
@@ -367,8 +379,8 @@ form {
 .toggleSenha {
   position: absolute;
   top: 8px;
-  right: 0;
-  width: 58px;
+  right: 10px;
+  width: 50px;
   height: 70%;
   border: none;
   background: transparent;
@@ -661,9 +673,6 @@ form {
     width: 90px;
     height: 90px;
   }
-
-
-
 }
 
 @media (max-width: 480px) {
@@ -688,6 +697,4 @@ form {
     width: 80px;
     height: 80px;
   }
-
-
 }

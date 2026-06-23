@@ -7,9 +7,13 @@ import styles from "./loginEmpresa.module.css";
 import { supabase } from "supabaseClient";
 
 import cija_logo from "../../../assets/logo2.png";
-import { useDocumentTitle } from "Hooks/useDocumentTitle";  
+import { useDocumentTitle } from "Hooks/useDocumentTitle";
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
+import {
+  Building2, // CNPJ/Empresa
+
+} from "lucide-react";
 
 export default function LoginEmpresa() {
   const navigate = useNavigate();
@@ -229,6 +233,7 @@ export default function LoginEmpresa() {
                       errors.email ? styles.error : ""
                     }`}
                   />
+                  <Building2 size={45} className={styles.inputIcon} />
 
                   {errors.email && (
                     <p className={styles.errorMessage}>{errors.email}</p>

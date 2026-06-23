@@ -4,17 +4,14 @@ import cijaLogo from "../../assets/logo2.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 
-interface Mensagem {
-  id_msg: string;
-  id_ja: string;
-  id_em: string;
-  enviado_por_jovem: boolean;
-  conteudo: string;
-  data_envio: string;
-  lida: boolean;
-}
+type MenuItem = {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  badge?: number;
+};
 
-// Ícones JobHub - outline 2px
+// Ícones
 const HomeIcon = () => (
   <svg
     viewBox="0 0 24 24"
@@ -118,39 +115,33 @@ const TrendingUpIcon = () => (
     strokeLinejoin="round"
   >
     <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
+    <polyline points="16 7 22 13" />
   </svg>
 );
-
-type MenuItem = {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-  badge?: number;
-};
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [userId, setUserId] = useState("");
-  const [naoLidas, setNaoLidas] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [naoLidas, setNaoLidas] = useState<number>(0);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [targetPath, setTargetPath] = useState<string | null>(null);
 
-  // Adiciona classe no body quando sidebar abre no mobile
+  // DETECTA ABERTA/FECHADA - trava scroll do site no mobile
   useEffect(() => {
-    if (isOpen && window.innerWidth <= 992) {
+    const isMobile = window.innerWidth <= 992;
+    if (isOpen && isMobile) {
       document.body.classList.add(styles.sidebarOpenBody);
     } else {
       document.body.classList.remove(styles.sidebarOpenBody);
     }
-
     return () => {
       document.body.classList.remove(styles.sidebarOpenBody);
     };
   }, [isOpen]);
 
+  // Pega usuário
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser();
@@ -159,34 +150,29 @@ export const Sidebar: React.FC = () => {
     init();
   }, []);
 
+  // Conta mensagens não lidas
   const carregarNaoLidas = useCallback(async () => {
     if (!userId) return;
-
     const { count } = await supabase
       .from("mensagens")
-      .select("*", {
-        count: "exact",
-        head: true,
-      })
+      .select("*", { count: "exact", head: true })
       .eq("id_ja", userId)
       .eq("enviado_por_jovem", false)
       .eq("lida", false);
-
     setNaoLidas(count || 0);
   }, [userId]);
 
-  // Polling de mensagens não lidas
   useEffect(() => {
     if (!userId) return;
-
     carregarNaoLidas();
-
-    const interval = setInterval(() => {
-      carregarNaoLidas();
-    }, 2000); // 2s
-
+    const interval = setInterval(carregarNaoLidas, 5000);
     return () => clearInterval(interval);
   }, [carregarNaoLidas, userId]);
+
+  // Fecha ao mudar de rota no mobile
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const menuItems: MenuItem[] = [
     { label: "Dashboard", path: "/clientDashboard", icon: <HomeIcon /> },
@@ -213,19 +199,25 @@ export const Sidebar: React.FC = () => {
 
   const toggleMenu = () => {
     if (isNavigating) return;
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   const handleNavigation = (path: string) => {
-    if (isNavigating || location.pathname === path) return;
+    if (isNavigating || location.pathname === path) {
+      setIsOpen(false);
+      return;
+    }
     setIsNavigating(true);
     setTargetPath(path);
+
+    // Navegação instantânea - quando fecha aparece o conteúdo normal
+    navigate(path);
+    setIsOpen(false);
+
     setTimeout(() => {
-      navigate(path);
-      setIsOpen(false);
       setIsNavigating(false);
       setTargetPath(null);
-    }, 1200);
+    }, 300);
   };
 
   const handleLogout = async () => {
@@ -238,10 +230,12 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
+      {/* Botão hambúrguer - só aparece no mobile via CSS */}
       <button
         className={styles.hamburger}
         onClick={toggleMenu}
-        aria-label="Abrir Menu"
+        aria-label={isOpen ? "Fechar Menu" : "Abrir Menu"}
+        aria-expanded={isOpen}
         disabled={isNavigating}
       >
         <div className={`${styles.bar} ${isOpen ? styles.bar1 : ""}`}></div>
@@ -249,10 +243,18 @@ export const Sidebar: React.FC = () => {
         <div className={`${styles.bar} ${isOpen ? styles.bar3 : ""}`}></div>
       </button>
 
-      {isOpen && <div className={styles.overlay} onClick={toggleMenu} />}
+      {/* Overlay escuro quando aberta no mobile */}
+      {isOpen && (
+        <div
+          className={styles.overlay}
+          onClick={toggleMenu}
+          aria-hidden="true"
+        />
+      )}
 
       <aside
         className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ""}`}
+        aria-hidden={!isOpen && window.innerWidth <= 992}
         style={{ pointerEvents: isNavigating ? "none" : "auto" }}
       >
         <div className={styles.topContent}>
@@ -263,17 +265,17 @@ export const Sidebar: React.FC = () => {
           </div>
 
           <nav className={styles.menu}>
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const estáAcessando = targetPath === item.path;
               const estáAtivo = location.pathname === item.path;
 
               return (
                 <button
-                  key={index}
+                  key={item.path}
                   className={`${styles.menuItem} ${estáAtivo ? styles.active : ""} ${estáAcessando ? styles.loadingItem : ""}`}
                   onClick={() => handleNavigation(item.path)}
                   disabled={isNavigating}
-                  style={{ opacity: isNavigating && !estáAcessando ? 0.6 : 1 }}
+                  aria-current={estáAtivo ? "page" : undefined}
                 >
                   <span className={styles.iconWrapper}>{item.icon}</span>
                   <span className={styles.menuLabel}>
@@ -319,3 +321,5 @@ export const Sidebar: React.FC = () => {
     </>
   );
 };
+
+export default Sidebar;

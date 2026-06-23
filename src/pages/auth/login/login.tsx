@@ -7,6 +7,17 @@ import cija_logo from "../../../assets/logo2.png";
 import EyeOpenIcon from "../../../components/icons/EyeOpenIcon";
 import EyeClosedIcon from "../../../components/icons/EyeClosedIcon";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+import {
+  Mail, // Email
+  Phone, // Telefone
+  User, // CPF/Pessoa
+  Building2, // CNPJ/Empresa
+  MapPin, // Endereço
+  Calendar, // Data
+  CheckCircle, // Check verde
+  XCircle, // X erro
+  AlertCircle, // Aviso
+} from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -223,10 +234,12 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={`${styles.input} ${errors.email ? styles.error : ""}`}
                   />
+                  <Mail size={45} className={styles.inputIcon} />
                   {errors.email && (
                     <p className={styles.errorMessage}>{errors.email}</p>
                   )}
                 </div>
+
                 <div className={styles.inputGroup}>
                   <label>Senha</label>
                   <div className={styles.senhaBox}>
