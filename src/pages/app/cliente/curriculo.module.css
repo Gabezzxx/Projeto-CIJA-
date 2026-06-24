@@ -1,6 +1,7 @@
 .container {
   display: flex;
   min-height: 100vh;
+  margin-left: 80px;
   background: #f8fafc;
   font-family: Inter, system-ui, sans-serif;
   color: #111827;
@@ -418,5 +419,13 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+@media (max-width:768px){
+  .container{
+    padding-top: 80px;
+    padding: 16px;
+    width: 100%;
+    margin-left: 0;
   }
 }

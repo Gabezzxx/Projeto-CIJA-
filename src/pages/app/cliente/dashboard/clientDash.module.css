@@ -13,6 +13,7 @@
   flex: 1;
   margin-left: 240px;
   padding: 40px 48px;
+  margin-left: 280px;
   width: calc(100% - 240px);
   min-height: 100vh;
   box-sizing: border-box;
@@ -590,6 +591,8 @@
   }
   .main {
     padding: 20px 16px;
+    padding-top: 80px;
+    width: 100%;
   }
   .header {
     flex-direction: column;
