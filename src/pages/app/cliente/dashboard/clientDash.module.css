@@ -1,24 +1,52 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important; /* iOS */
+  overscroll-behavior-y: auto;
+  background: #09090b;
+}
+
 .app {
   display: flex;
-  min-height: 100vh;
   width: 100%;
+  min-height: 100vh;
   background: #09090b;
   color: #e4e4e7;
   font-family:
     -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
-  overflow-x: hidden;
+  overflow: visible !important; /* tira o hidden */
+}
+
+/* SCROLL BONITO NO BODY */
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-track {
+  background: #0b0b12;
+}
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2a2438, #7c3aed);
+  border-radius: 4px;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7c3aed, #5b21b6);
 }
 
 .main {
   flex: 1;
-  margin-left: 240px;
-  padding: 40px 48px;
   margin-left: 280px;
-  width: calc(100% - 240px);
+  width: calc(100% - 280px);
+  padding: 40px 48px;
   min-height: 100vh;
   box-sizing: border-box;
 }
-
 .header {
   display: flex;
   justify-content: space-between;
@@ -26,7 +54,6 @@
   margin-bottom: 40px;
   gap: 24px;
 }
-
 .headerLeft h1 {
   font-size: 30px;
   font-weight: 700;
@@ -78,14 +105,12 @@
   flex-direction: column;
   gap: 2px;
 }
-
 .userName {
   font-size: 14px;
   font-weight: 600;
   color: #fafafa;
   line-height: 1.2;
 }
-
 .userBadge {
   font-size: 11px;
   font-weight: 500;
@@ -107,14 +132,12 @@
   border-radius: 16px;
   padding: 28px;
 }
-
 .cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-
 .cardTitle {
   font-size: 16px;
   font-weight: 600;
@@ -128,7 +151,6 @@
   justify-content: space-between;
   margin-bottom: 20px;
 }
-
 .scoreValue {
   font-size: 48px;
   font-weight: 700;
@@ -136,7 +158,6 @@
   line-height: 1;
   letter-spacing: -0.02em;
 }
-
 .expertBadge {
   padding: 4px 10px;
   border-radius: 6px;
@@ -153,7 +174,6 @@
   overflow: hidden;
   margin: 0 0 28px;
 }
-
 .progressFill {
   height: 100%;
   border-radius: 3px;
@@ -169,14 +189,12 @@
   border-top: 1px solid #1f1f23;
   border-bottom: 1px solid #1f1f23;
 }
-
 .metricLabel {
   font-size: 12px;
   color: #71717a;
   margin-bottom: 6px;
   font-weight: 500;
 }
-
 .metricValue {
   font-size: 22px;
   font-weight: 600;
@@ -195,7 +213,6 @@
   cursor: pointer;
   transition: background 0.15s;
 }
-
 .btnPrimary:hover {
   background: #6d28d9;
 }
@@ -214,7 +231,6 @@
   flex-direction: column;
   gap: 12px;
 }
-
 .actionItem {
   display: flex;
   gap: 12px;
@@ -225,12 +241,10 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-
 .actionItem:hover {
   background: #16161a;
   border-color: #27272f;
 }
-
 .checkbox {
   width: 18px;
   height: 18px;
@@ -240,24 +254,21 @@
   margin-top: 2px;
   transition: all 0.15s;
 }
-
 .actionItem:hover .checkbox {
   border-color: #52525b;
 }
-
 .actionContent {
   flex: 1;
 }
-
 .actionTitle {
   font-size: 14px;
   font-weight: 500;
   color: #e4e4e7;
   margin-bottom: 2px;
 }
-
 .actionDesc {
   font-size: 13px;
+  flex: 999;
   color: #71717a;
   line-height: 1.4;
 }
@@ -270,7 +281,6 @@
   font-weight: 500;
   cursor: pointer;
 }
-
 .linkMore:hover {
   color: #c4b5fd;
 }
@@ -281,11 +291,10 @@
 
 .tabs {
   display: flex;
-  gap: 28px;
+  gap: 15px;
   border-bottom: 1px solid #1f1f23;
   margin-bottom: 24px;
 }
-
 .tab {
   background: none;
   border: none;
@@ -300,15 +309,12 @@
   position: relative;
   transition: color 0.15s;
 }
-
 .tab:hover {
   color: #a1a1aa;
 }
-
 .tab.active {
   color: #fafafa;
 }
-
 .tab.active::after {
   content: "";
   position: absolute;
@@ -318,7 +324,6 @@
   height: 2px;
   background: #7c3aed;
 }
-
 .tabCount {
   background: #18181b;
   color: #71717a;
@@ -327,7 +332,6 @@
   font-size: 11px;
   font-weight: 500;
 }
-
 .tab.active .tabCount {
   background: rgba(124, 58, 237, 0.15);
   color: #a78bfa;
@@ -345,31 +349,26 @@
   transition: all 0.15s ease;
   gap: 24px;
 }
-
 .vagaCard:hover {
   background: #111113;
   border-color: #27272f;
 }
-
 .vagaContent {
   flex: 1;
   min-width: 0;
 }
-
 .vagaHeader {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
-
 .vagaTitle {
   font-size: 16px;
   font-weight: 600;
   color: #fafafa;
   margin: 0;
 }
-
 .vagaBadge {
   font-size: 10px;
   padding: 2px 6px;
@@ -380,7 +379,6 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-
 .vagaMeta {
   display: flex;
   align-items: center;
@@ -389,16 +387,13 @@
   color: #a1a1aa;
   flex-wrap: wrap;
 }
-
 .vagaMetaItem {
   white-space: nowrap;
 }
-
 .vagaSalario {
   color: #10b981;
   font-weight: 500;
 }
-
 .vagaAction {
   flex-shrink: 0;
 }
@@ -415,7 +410,6 @@
   transition: all 0.15s;
   white-space: nowrap;
 }
-
 .btnCandidatar:hover {
   background: #18181b;
   border-color: #3f3f46;
@@ -435,7 +429,6 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-
 .btnVerTodas:hover {
   background: #111113;
   color: #e4e4e7;
@@ -446,7 +439,6 @@
   text-align: center;
   padding: 48px 24px;
 }
-
 .emptyState svg {
   width: 64px;
   height: 64px;
@@ -454,26 +446,22 @@
   stroke: #3f3f46;
   opacity: 0.5;
 }
-
 .emptyTitle {
   font-size: 16px;
   font-weight: 600;
   color: #fafafa;
   margin: 0 0 8px;
 }
-
 .emptyDesc {
   font-size: 14px;
   color: #71717a;
   margin: 0;
 }
-
 .allDone {
   text-align: center;
   padding: 24px;
 }
 
-/* EMPRESA CARD - ABA DE EMPRESAS */
 .empresaCard {
   padding: 20px 24px;
   background: #0c0c0e;
@@ -485,23 +473,19 @@
   transition: all 0.15s ease;
   gap: 24px;
 }
-
 .empresaCard:hover {
   background: #111113;
   border-color: #27272f;
 }
-
 .empresaContent {
   flex: 1;
   min-width: 0;
 }
-
 .empresaHeader {
   display: flex;
   align-items: center;
   gap: 16px;
 }
-
 .empresaLogo {
   width: 52px;
   height: 52px;
@@ -517,26 +501,22 @@
   overflow: hidden;
   border: 2px solid rgba(124, 58, 237, 0.3);
 }
-
 .empresaLogo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .empresaLogo svg {
   width: 24px;
   height: 24px;
   stroke: white;
 }
-
 .empresaNome {
   font-size: 17px;
   font-weight: 600;
   color: #fafafa;
   margin: 0 0 4px 0;
 }
-
 .empresaMeta {
   display: flex;
   align-items: center;
@@ -544,14 +524,12 @@
   font-size: 13px;
   color: #a1a1aa;
 }
-
 .empresaMeta svg {
   width: 14px;
   height: 14px;
   stroke: #7c3aed;
   flex-shrink: 0;
 }
-
 .empresaDesc {
   color: #9ca3af;
   font-size: 14px;
@@ -565,8 +543,8 @@
 
 @media (max-width: 1024px) {
   .main {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
     padding: 24px;
   }
   .grid2 {
@@ -589,6 +567,7 @@
     justify-content: center;
     display: flex;
   }
+
   .main {
     padding: 20px 16px;
     padding-top: 80px;

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { replace, useNavigate, useParams } from "react-router-dom";
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import { supabase } from "supabaseClient";
 import styles from "./perfil.module.css";
@@ -14,61 +14,67 @@ const phone = (v: string) => {
 };
 
 const calc = (user: any, cv: any) => {
-  const checks = {
-    avatar: !!user.avatar_url,
-    nome: (user.nome || "").trim().length > 3,
-    email: !!user.email,
-    tel: (user.telefone || "").replace(/\D/g, "").length >= 10,
-    desc: 0,
-    skills: 0,
-    formacao: 0,
-    experiencia: 0,
-  };
-  const descLen = cv.descricao?.trim().length || 0;
+  const hasAvatar = !!user.avatar;
+  const hasNome = (user.nome || "").trim().length > 2;
+  const hasEmail = !!user.email;
+  const hasTel = (user.tel || "").replace(/\D/g, "").length >= 10;
 
-  // ate quantos pontos user ganha  por caracteres na descricao adicionado
-  checks.desc =
+  const descLen = (cv.descricao || "").trim().length;
+  const desc =
     descLen >= 100
       ? 20
       : descLen >= 50
-        ? 15
+        ? 25
         : descLen >= 20
           ? 8
           : descLen > 0
             ? 3
             : 0;
-  const skills =
-    cv.competencias?.split(",").filter((s: string) => s.trim()).length || 0;
-  checks.skills = Math.min(skills * 3, 15);
+
+  const skillsCount = (cv.competencias || "")
+    .split(",")
+    .filter((s: string) => s.trim()).length;
+  const skills = Math.min(skillsCount * 3, 15);
+
+  let formacao = 0;
   try {
     const form = JSON.parse(cv.curso || "[]");
-    checks.formacao =
-      Array.isArray(form) && form.length > 0 ? (form.length >= 2 ? 15 : 10) : 0;
-  } catch {
-    checks.formacao = 0;
-  }
+    if (Array.isArray(form) && form.length > 0)
+      formacao = form.length >= 2 ? 15 : 10;
+  } catch {}
+
+  let experiencia = 0;
   try {
     const exp = JSON.parse(cv.experiencias || "{}");
-    const expList = exp.experiencias || [];
-    checks.experiencia =
-      expList.length >= 2 ? 20 : expList.length === 1 ? 12 : 0;
-  } catch {
-    checks.experiencia = 0;
-  }
+    const list = exp.experiencias || [];
+    experiencia = list.length >= 2 ? 20 : list.length === 1 ? 12 : 0;
+  } catch {}
 
-  const pct = Math.min(
-    15 +
-      5 +
-      5 +
-      5 +
-      checks.desc +
-      checks.skills +
-      checks.formacao +
-      checks.experiencia,
+  const percent = Math.min(
+    (hasAvatar ? 15 : 0) +
+      (hasNome ? 5 : 0) +
+      (hasEmail ? 5 : 0) +
+      (hasTel ? 5 : 0) +
+      desc +
+      skills +
+      formacao +
+      experiencia,
     100,
   );
-  return { percent: pct, details: checks };
-  // calculo de % perfil
+
+  return {
+    percent,
+    details: {
+      hasAvatar,
+      hasNome,
+      hasEmail,
+      hasTel,
+      desc,
+      skills,
+      formacao,
+      experiencia,
+    },
+  };
 };
 
 export default function Perfil() {
@@ -196,7 +202,6 @@ export default function Perfil() {
       return [];
     }
   }, [cv.exp]);
-
   const cur = useMemo(() => {
     try {
       return JSON.parse(cv.cur);
@@ -204,7 +209,6 @@ export default function Perfil() {
       return [];
     }
   }, [cv.cur]);
-
   const skills = useMemo(
     () =>
       cv.comp
@@ -213,7 +217,6 @@ export default function Perfil() {
         .filter(Boolean),
     [cv.comp],
   );
-
   const projs = useMemo(() => {
     try {
       return JSON.parse(cv.exp).projetos || [];
@@ -362,10 +365,7 @@ export default function Perfil() {
             <div className={styles.headerInfo}>
               <h1>{profile.nome || "Seu Nome"}</h1>
               <span className={styles.badge}>Jovem Aprendiz</span>
-              <p className={styles.bio}>
-                {cv.desc ||
-                  "Estudante dedicado em busca da primeira oportunidade para desenvolver habilidades."}
-              </p>
+              <p className={styles.bio}>{cv.desc}</p>
               <div className={styles.contacts}>
                 <span>
                   <svg
@@ -396,16 +396,13 @@ export default function Perfil() {
                 </span>
                 <span>
                   <svg
-                    width="14"
-                    height="14"
+                    width="30"
+                    height="30"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#a78bfa"
                     strokeWidth="2"
-                  >
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
+                  ></svg>
                   {profile.cidade}
                 </span>
               </div>
@@ -424,15 +421,17 @@ export default function Perfil() {
                   strokeWidth="2"
                 >
                   <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  <path d="M16.5 3.5a2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                 </svg>
               </button>
             )}
           </section>
           <section className={styles.numbersCard}>
-            {visualizacaoEmpresa && <h3>Perfil do candidato em números</h3>}
-            {!visualizacaoEmpresa && <h3>Seu perfil em números</h3>}
-
+            <h3>
+              {visualizacaoEmpresa
+                ? "Perfil do candidato em números"
+                : "Seu perfil em números"}
+            </h3>
             <svg viewBox="0 0 300 60" className={styles.chart}>
               <path
                 d="M0 40 Q 50 20 100 35 T 200 25 T 300 30"
@@ -457,7 +456,6 @@ export default function Perfil() {
               </div>
             </div>
           </section>
-      
         </div>
 
         <nav className={styles.tabs}>
@@ -502,26 +500,12 @@ export default function Perfil() {
                     </button>
                   </>
                 ) : (
-                  <p>
-                    {cv.desc ||
-                      "Sou estudante do ensino médio, comunicativo e organizado, buscando primeira oportunidade."}
-                  </p>
+                  <p>{cv.desc}</p>
                 )}
                 <div className={styles.tags}>
-                  {(skills.length
-                    ? skills
-                    : [
-                        "Proativo",
-                        "Comunicativo",
-                        "Organizado",
-                        "Responsável",
-                        "Aprendizado rápido",
-                      ]
-                  )
-                    .slice(0, 5)
-                    .map((s) => (
-                      <span key={s}>{s}</span>
-                    ))}
+                  {skills.slice(0, 5).map((s) => (
+                    <span key={s}>{s}</span>
+                  ))}
                 </div>
               </section>
 
@@ -547,20 +531,19 @@ export default function Perfil() {
                         <strong>{c.curso}</strong>
                         <p>{c.instituicao}</p>
                         <small>
-                          {c.inicio} - {c.fim || "2026"}
+                          {c.inicio} - {c.fim || "Atual"}
                         </small>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className={styles.item}>
-                    <div className={styles.dot} />
-                    <div>
-                      <strong>Ensino Médio</strong>
-                      <p>Colégio Bento</p>
-                      <small>2024 - 2026</small>
-                      <small className={styles.meta}>Concluindo em 2026</small>
-                    </div>
+                  <div className={styles.empty}>
+                    <p>Você ainda não adicionou formação acadêmica.</p>
+                    {!visualizacaoEmpresa && (
+                      <button onClick={() => navigate("/curriculo")}>
+                        Adicionar formação
+                      </button>
+                    )}
                   </div>
                 )}
               </section>
@@ -623,29 +606,17 @@ export default function Perfil() {
                   )}
                 </div>
                 <div className={styles.skillGrid}>
-                  {(skills.length
-                    ? skills
-                    : [
-                        "Informática básica",
-                        "Trabalho em equipe",
-                        "Pacote Office",
-                        "Organização",
-                        "Comunicação",
-                        "Aprendizado rápido",
-                      ]
-                  )
-                    .slice(0, 6)
-                    .map((s, i) => (
-                      <div key={s} className={styles.skill}>
-                        <div className={styles.skillTop}>
-                          <span>{s}</span>
-                          <span>{90 - i * 2}%</span>
-                        </div>
-                        <div className={styles.bar}>
-                          <div style={{ width: `${90 - i * 2}%` }} />
-                        </div>
+                  {skills.slice(0, 6).map((s, i) => (
+                    <div key={s} className={styles.skill}>
+                      <div className={styles.skillTop}>
+                        <span>{s}</span>
+                        <span>{90 - i * 2}%</span>
                       </div>
-                    ))}
+                      <div className={styles.bar}>
+                        <div style={{ width: `${90 - i * 2}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
 
@@ -692,30 +663,6 @@ export default function Perfil() {
                   </div>
                 )}
               </section>
-              {!visualizacaoEmpresa && (
-                <section className={`${styles.card} ${styles.dica}`}>
-                  <h3>Dica para você</h3>
-                  <p>
-                    Adicionar cursos e certificações aumenta suas chances de ser
-                    encontrado pelas empresas!
-                  </p>
-                  {!visualizacaoEmpresa && (
-                    <button onClick={() => navigate("/curriculo")}>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                      >
-                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                        <path d="M12 14v7" />
-                      </svg>
-                      Adicionar agora
-                    </button>
-                  )}
-                </section>
-              )}
             </>
           )}
 
@@ -757,7 +704,7 @@ export default function Perfil() {
                     padding: "20px",
                   }}
                 >
-                  Nenhuma formação cadastrada
+                  Você ainda não adicionou formação acadêmica.
                 </p>
               )}
             </section>
@@ -807,11 +754,6 @@ export default function Perfil() {
             >
               <div className={styles.cardHead}>
                 <h3>Experiência profissional</h3>
-                {!visualizacaoEmpresa && (
-                  <button onClick={() => navigate("/curriculo")}>
-                    + Adicionar
-                  </button>
-                )}
               </div>
               {exp.length ? (
                 exp.map((e: any, i: number) => (
@@ -843,7 +785,7 @@ export default function Perfil() {
                 ))
               ) : (
                 <div className={styles.empty}>
-                  <p>Nenhuma experiência cadastrada</p>
+                  <p>Você ainda não adicionou experiências profissionais.</p>
                   {!visualizacaoEmpresa && (
                     <button onClick={() => navigate("/curriculo")}>
                       Adicionar primeira experiência
@@ -858,11 +800,6 @@ export default function Perfil() {
             <section className={styles.card} style={{ gridColumn: "1/-1" }}>
               <div className={styles.cardHead}>
                 <h3>Projetos</h3>
-                {!visualizacaoEmpresa && (
-                  <button onClick={() => navigate("/curriculo")}>
-                    + Adicionar
-                  </button>
-                )}
               </div>
               {projs.length ? (
                 projs.map((p: any, i: number) => (
@@ -900,13 +837,21 @@ export default function Perfil() {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 0 0 0 2 2h12a2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                <p>Em breve você poderá enviar RG, CPF e comprovantes aqui.</p>
+                {visualizacaoEmpresa && (
+                  <p>
+                    Nehnum RG,CPF informado pelo candidato
+                  </p>
+                )}
+                 {!visualizacaoEmpresa && (
+                  <p>
+                    Adicione seus documentos aqui
+                  </p>
+                )}
               </div>
             </section>
           )}
         </div>
 
-        {/*  sistema de ver perifl quando empresa/user acessa rota */}
         {visualizacaoEmpresa && (
           <button className={styles.voltar} onClick={() => navigate(-1)}>
             Voltar
