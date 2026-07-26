@@ -7,6 +7,7 @@ import {
   AlignmentType,
   BorderStyle,
   convertInchesToTwip,
+  TabStopType,
 } from "docx";
 // @ts-ignore - html2pdf.js não tem tipos oficiais
 import html2pdf from "html2pdf.js";
@@ -16,19 +17,145 @@ import html2pdf from "html2pdf.js";
    ============================================================ */
 
 const STOPWORDS = new Set<string>([
-  "a","o","as","os","um","uma","uns","umas","de","da","do","das","dos","e","ou",
-  "em","no","na","nos","nas","por","para","com","sem","sob","sobre","entre",
-  "que","se","ja","já","foi","ser","tem","ter","sido","sao","são","ter","tido",
-  "eu","voce","você","tu","ele","ela","nos","nós","eles","elas","meu","minha",
-  "seu","sua","nosso","nossa","este","esta","isto","aquilo","isso","esse","essa",
-  "muito","muita","pouco","pouca","mais","menos","tambem","também","apenas",
-  "ate","até","desde","como","quando","onde","aqui","ali","la","lá","cá",
-  "the","and","or","of","to","in","for","on","at","by","an","a","i","is","it",
-  "be","as","if","so","we","he","she","they","you","this","that","with","from",
-  "vaga","oportunidade","cargo","empresa","profissional","perfil","candidato",
-  "atuar","atuando","atuação","atuei","trabalhei","trabalho","experiencia",
-  "experiência","anos","ano","meses","mes","local","atuais","anterior",
-  "etc","ex","i","ii","iii","iv"
+  "a",
+  "o",
+  "as",
+  "os",
+  "um",
+  "uma",
+  "uns",
+  "umas",
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "e",
+  "ou",
+  "em",
+  "no",
+  "na",
+  "nos",
+  "nas",
+  "por",
+  "para",
+  "com",
+  "sem",
+  "sob",
+  "sobre",
+  "entre",
+  "que",
+  "se",
+  "ja",
+  "já",
+  "foi",
+  "ser",
+  "tem",
+  "ter",
+  "sido",
+  "sao",
+  "são",
+  "ter",
+  "tido",
+  "eu",
+  "voce",
+  "você",
+  "tu",
+  "ele",
+  "ela",
+  "nos",
+  "nós",
+  "eles",
+  "elas",
+  "meu",
+  "minha",
+  "seu",
+  "sua",
+  "nosso",
+  "nossa",
+  "este",
+  "esta",
+  "isto",
+  "aquilo",
+  "isso",
+  "esse",
+  "essa",
+  "muito",
+  "muita",
+  "pouco",
+  "pouca",
+  "mais",
+  "menos",
+  "tambem",
+  "também",
+  "apenas",
+  "ate",
+  "até",
+  "desde",
+  "como",
+  "quando",
+  "onde",
+  "aqui",
+  "ali",
+  "la",
+  "lá",
+  "cá",
+  "the",
+  "and",
+  "or",
+  "of",
+  "to",
+  "in",
+  "for",
+  "on",
+  "at",
+  "by",
+  "an",
+  "a",
+  "i",
+  "is",
+  "it",
+  "be",
+  "as",
+  "if",
+  "so",
+  "we",
+  "he",
+  "she",
+  "they",
+  "you",
+  "this",
+  "that",
+  "with",
+  "from",
+  "vaga",
+  "oportunidade",
+  "cargo",
+  "empresa",
+  "profissional",
+  "perfil",
+  "candidato",
+  "atuar",
+  "atuando",
+  "atuação",
+  "atuei",
+  "trabalhei",
+  "trabalho",
+  "experiencia",
+  "experiência",
+  "anos",
+  "ano",
+  "meses",
+  "mes",
+  "local",
+  "atuais",
+  "anterior",
+  "etc",
+  "ex",
+  "i",
+  "ii",
+  "iii",
+  "iv",
 ]);
 
 /**
@@ -92,8 +219,8 @@ function gerarBigramas(tokens: string[]): string[] {
    ============================================================ */
 
 export interface AnaliseScore {
-  nota: number;             // 0 a 10
-  compatibilidade: number;  // 0 a 100 (%)
+  nota: number; // 0 a 10
+  compatibilidade: number; // 0 a 100 (%)
   criterios: {
     estruturaTextual: number;
     clarezaExecutiva: number;
@@ -121,56 +248,330 @@ export interface AnaliseScore {
 }
 
 const VERBOS_ACAO = new Set([
-  "desenvolvi","desenvolveu","desenvolver","criei","criou","criar","implementei",
-  "implementou","implementar","liderei","liderou","liderar","gerenciei",
-  "gerenciou","gerenciar","coordenei","coordenou","coordenar","otimizei",
-  "otimizou","otimizar","automatizei","automatizou","automatizar","reduzi",
-  "reduziu","reduzir","aumentei","aumentou","aumentar","projetei","projetou",
-  "projetar","planejei","planejou","planejar","executei","executou","executar",
-  "realizei","realizou","realizar","conquistei","conquistou","conquistar",
-  "ministrei","ministrou","ministrar","treinei","treinou","treinar",
-  "construi","construiu","construir","mantive","manteve","manter",
-  "elaborei","elaborou","elaborar","analisei","analisou","analisar",
-  "aplicou","aplicar","contribui","contribuiu","contribuir","apoiei","apoiou",
-  "responsabilizei","responsabilizou","responsabilizar","atuei","atuou","atuar",
-  "trabalhei","trabalhou","trabalhar","promovi","promoveu","promover",
-  "alcancei","alcancou","alcancar","superou","superar","estabeleceu",
-  "estabeleci","estabelecer","mapeei","mapeou","mapear","catalisei",
-  "catalisou","catalisar","reestruturei","reestruturou","reestruturar"
+  "desenvolvi",
+  "desenvolveu",
+  "desenvolver",
+  "criei",
+  "criou",
+  "criar",
+  "implementei",
+  "implementou",
+  "implementar",
+  "liderei",
+  "liderou",
+  "liderar",
+  "gerenciei",
+  "gerenciou",
+  "gerenciar",
+  "coordenei",
+  "coordenou",
+  "coordenar",
+  "otimizei",
+  "otimizou",
+  "otimizar",
+  "automatizei",
+  "automatizou",
+  "automatizar",
+  "reduzi",
+  "reduziu",
+  "reduzir",
+  "aumentei",
+  "aumentou",
+  "aumentar",
+  "projetei",
+  "projetou",
+  "projetar",
+  "planejei",
+  "planejou",
+  "planejar",
+  "executei",
+  "executou",
+  "executar",
+  "realizei",
+  "realizou",
+  "realizar",
+  "conquistei",
+  "conquistou",
+  "conquistar",
+  "ministrei",
+  "ministrou",
+  "ministrar",
+  "treinei",
+  "treinou",
+  "treinar",
+  "construi",
+  "construiu",
+  "construir",
+  "mantive",
+  "manteve",
+  "manter",
+  "elaborei",
+  "elaborou",
+  "elaborar",
+  "analisei",
+  "analisou",
+  "analisar",
+  "aplicou",
+  "aplicar",
+  "contribui",
+  "contribuiu",
+  "contribuir",
+  "apoiei",
+  "apoiou",
+  "responsabilizei",
+  "responsabilizou",
+  "responsabilizar",
+  "atuei",
+  "atuou",
+  "atuar",
+  "trabalhei",
+  "trabalhou",
+  "trabalhar",
+  "promovi",
+  "promoveu",
+  "promover",
+  "alcancei",
+  "alcancou",
+  "alcancar",
+  "superou",
+  "superar",
+  "estabeleceu",
+  "estabeleci",
+  "estabelecer",
+  "mapeei",
+  "mapeou",
+  "mapear",
+  "catalisei",
+  "catalisou",
+  "catalisar",
+  "reestruturei",
+  "reestruturou",
+  "reestruturar",
 ]);
 
 const TERMOS_TECNICOS_COMUNS = new Set([
-  "javascript","typescript","react","node","nodejs","python","java","sql",
-  "mysql","postgres","postgresql","mongodb","docker","kubernetes","aws","azure","gcp",
-  "git","github","gitlab","bitbucket","html","css","sass","less","tailwind","figma",
-  "photoshop","illustrator","canva","excel","word","powerpoint","office","libre",
-  "sap","salesforce","jira","trello","asana","notion","scrum","agile","kanban",
-  "lean","seo","sem","google","analytics","adsense","ads","meta","tiktok","linkedin",
-  "api","rest","graphql","microsservicos","microsserviços","frontend","backend",
-  "fullstack","devops","qa","testes","jest","cypress","selenium","linux","windows",
-  "macos","android","ios","swift","kotlin","flutter","dart","vue","angular",
-  "nextjs","nestjs","express","django","flask","spring","hibernate","redis",
-  "rabbitmq","kafka","terraform","ansible","jenkins","ci","cd","pipeline",
-  "machine","learning","ia","ai","nlp","data","powerbi","tableau","etl",
-  "elt","dax","r","scala","spark","hadoop","vba","macros",
-  "atendimento","cliente","vendas","negociacao","negociação","crm","erp",
-  "rh","recrutamento","selecao","seleção","treinamento","onboarding",
-  "folha","ponto","esocial","contabilidade","fiscal","financeiro",
-  "cobranca","cobrança","credito","crédito","conta","pagamento","banco",
-  "tesouraria","compras","logistica","logística","estoque","inventario",
-  "inventário","marketing","conteudo","conteúdo","design","ux","ui",
-  "produto","okr","kpi","pmo","compliance","auditoria","controladoria",
-  "javascript","typescript","react","nodejs","angularjs","reactjs",
-  "googleads","facebookads","tagmanager","looker","metabase","airflow",
-  "databricks","snowflake","redshift","bigquery","lambda","s3","ec2",
-  "route53","cloudfront","iam","vpc","ecs","eks","fargate",
-  "photoshop","illustrator","premiere","aftereffects","lightroom",
-  "blender","maya","3dsmax","unity","unrealengine","c++","c#","golang",
-  "rust","ruby","rails","laravel","symfony","codeigniter","wordpress",
-  "magento","shopify","woocommerce","prestashop","salesforce","hubspot",
-  "zendesk","intercom","freshdesk","pipedrive","rdstation","mailchimp",
-  "sendgrid","twilio","stripe","paypal","mercadopago","pagseguro",
-  "reactnative","expo","ionic","cordova","phonegap","xamarin","nativescript"
+  "javascript",
+  "typescript",
+  "react",
+  "node",
+  "nodejs",
+  "python",
+  "java",
+  "sql",
+  "mysql",
+  "postgres",
+  "postgresql",
+  "mongodb",
+  "docker",
+  "kubernetes",
+  "aws",
+  "azure",
+  "gcp",
+  "git",
+  "github",
+  "gitlab",
+  "bitbucket",
+  "html",
+  "css",
+  "sass",
+  "less",
+  "tailwind",
+  "figma",
+  "photoshop",
+  "illustrator",
+  "canva",
+  "excel",
+  "word",
+  "powerpoint",
+  "office",
+  "libre",
+  "sap",
+  "salesforce",
+  "jira",
+  "trello",
+  "asana",
+  "notion",
+  "scrum",
+  "agile",
+  "kanban",
+  "lean",
+  "seo",
+  "sem",
+  "google",
+  "analytics",
+  "adsense",
+  "ads",
+  "meta",
+  "tiktok",
+  "linkedin",
+  "api",
+  "rest",
+  "graphql",
+  "microsservicos",
+  "microsserviços",
+  "frontend",
+  "backend",
+  "fullstack",
+  "devops",
+  "qa",
+  "testes",
+  "jest",
+  "cypress",
+  "selenium",
+  "linux",
+  "windows",
+  "macos",
+  "android",
+  "ios",
+  "swift",
+  "kotlin",
+  "flutter",
+  "dart",
+  "vue",
+  "angular",
+  "nextjs",
+  "nestjs",
+  "express",
+  "django",
+  "flask",
+  "spring",
+  "hibernate",
+  "redis",
+  "rabbitmq",
+  "kafka",
+  "terraform",
+  "ansible",
+  "jenkins",
+  "ci",
+  "cd",
+  "pipeline",
+  "machine",
+  "learning",
+  "ia",
+  "ai",
+  "nlp",
+  "data",
+  "powerbi",
+  "tableau",
+  "etl",
+  "elt",
+  "dax",
+  "r",
+  "scala",
+  "spark",
+  "hadoop",
+  "vba",
+  "macros",
+  "atendimento",
+  "cliente",
+  "vendas",
+  "negociacao",
+  "negociação",
+  "crm",
+  "erp",
+  "rh",
+  "recrutamento",
+  "selecao",
+  "seleção",
+  "treinamento",
+  "onboarding",
+  "folha",
+  "ponto",
+  "esocial",
+  "contabilidade",
+  "fiscal",
+  "financeiro",
+  "cobranca",
+  "cobrança",
+  "credito",
+  "crédito",
+  "conta",
+  "pagamento",
+  "banco",
+  "tesouraria",
+  "compras",
+  "logistica",
+  "logística",
+  "estoque",
+  "inventario",
+  "inventário",
+  "marketing",
+  "conteudo",
+  "conteúdo",
+  "design",
+  "ux",
+  "ui",
+  "produto",
+  "okr",
+  "kpi",
+  "pmo",
+  "compliance",
+  "auditoria",
+  "controladoria",
+  "reactjs",
+  "angularjs",
+  "googleads",
+  "facebookads",
+  "tagmanager",
+  "looker",
+  "metabase",
+  "airflow",
+  "databricks",
+  "snowflake",
+  "redshift",
+  "bigquery",
+  "lambda",
+  "s3",
+  "ec2",
+  "route53",
+  "cloudfront",
+  "iam",
+  "vpc",
+  "ecs",
+  "eks",
+  "fargate",
+  "premiere",
+  "aftereffects",
+  "lightroom",
+  "blender",
+  "maya",
+  "3dsmax",
+  "unity",
+  "unrealengine",
+  "c++",
+  "c#",
+  "golang",
+  "rust",
+  "ruby",
+  "rails",
+  "laravel",
+  "symfony",
+  "codeigniter",
+  "wordpress",
+  "magento",
+  "shopify",
+  "woocommerce",
+  "prestashop",
+  "hubspot",
+  "zendesk",
+  "intercom",
+  "freshdesk",
+  "pipedrive",
+  "rdstation",
+  "mailchimp",
+  "sendgrid",
+  "twilio",
+  "stripe",
+  "paypal",
+  "mercadopago",
+  "pagseguro",
+  "reactnative",
+  "expo",
+  "ionic",
+  "cordova",
+  "phonegap",
+  "xamarin",
+  "nativescript",
 ]);
 
 /**
@@ -221,22 +622,18 @@ export function calcularScoreCurriculo(
   dadosCurriculo: any,
   vagaDescricao: string,
 ): AnaliseScore {
-  // Texto completo do currículo: tudo (resumo, experiências, habilidades...)
   const partesBrutas = achatarTexto(dadosCurriculo);
   const curriculoTextoBruto = partesBrutas.join(" ");
   const resumoStr = obterResumo(dadosCurriculo);
 
   const tokensCurriculo = tokenizar(curriculoTextoBruto);
-  const freqCurriculo = frequencia(tokensCurriculo);
   const setCurriculo = new Set(tokensCurriculo);
   const bigramsCurriculo = new Set(gerarBigramas(tokensCurriculo));
 
   const tokensVaga = tokenizar(vagaDescricao || "");
   const freqVaga = frequencia(tokensVaga);
-  const setVaga = new Set(tokensVaga);
   const bigramsVaga = gerarBigramas(tokensVaga);
 
-  // --- 1) Estrutura textual (0..10) -----------------------------
   const temResumo = resumoStr.trim().length > 0;
   const temExperiencia =
     Array.isArray(dadosCurriculo?.experiencias) &&
@@ -265,21 +662,19 @@ export function calcularScoreCurriculo(
   if (temExperiencia) estrutura += 2.5;
   if (temFormacao) estrutura += 1.5;
   if (temHabilidades) estrutura += 1.5;
-  // bônus: 2 ou mais experiências
-  if (temExperiencia && dadosCurriculo.experiencias.length >= 2) estrutura += 0.5;
-  if (temExperiencia && dadosCurriculo.experiencias.length >= 3) estrutura += 0.3;
-  // bônus: resumo entre 80 e 800 caracteres (executivo)
+  if (temExperiencia && dadosCurriculo.experiencias.length >= 2)
+    estrutura += 0.5;
+  if (temExperiencia && dadosCurriculo.experiencias.length >= 3)
+    estrutura += 0.3;
   if (temResumo && resumoStr.length >= 80 && resumoStr.length <= 800) {
     estrutura += 0.5;
   }
   estrutura = Math.min(10, estrutura);
 
-  // --- 2) Clareza executiva (0..10) -----------------------------
   let clareza = 0;
   if (resumoStr.length >= 80 && resumoStr.length <= 800) clareza += 2.0;
   if (resumoStr.length > 30) clareza += 1.0;
 
-  // verbos de ação no texto inteiro (densidade)
   let qtdVerbos = 0;
   VERBOS_ACAO.forEach((v) => {
     if (setCurriculo.has(v)) qtdVerbos++;
@@ -290,7 +685,6 @@ export function calcularScoreCurriculo(
   else if (qtdVerbos >= 3) clareza += 1.5;
   else if (qtdVerbos >= 1) clareza += 0.8;
 
-  // métricas (%, R$, números) no texto
   const temMetricas =
     /\d+\s*%/.test(curriculoTextoBruto) ||
     /R\$\s*\d+/.test(curriculoTextoBruto) ||
@@ -299,7 +693,6 @@ export function calcularScoreCurriculo(
     );
   if (temMetricas) clareza += 2.0;
 
-  // habilidades densas
   if (
     Array.isArray(dadosCurriculo?.habilidades) &&
     dadosCurriculo.habilidades.length >= 8
@@ -316,7 +709,6 @@ export function calcularScoreCurriculo(
   )
     clareza += 1.0;
 
-  // bullets em experiências (clareza executiva)
   let totalBullets = 0;
   if (Array.isArray(dadosCurriculo?.experiencias)) {
     for (const exp of dadosCurriculo.experiencias) {
@@ -328,11 +720,8 @@ export function calcularScoreCurriculo(
 
   clareza = Math.min(10, clareza);
 
-  // --- 3) Alinhamento à vaga (0..10) ----------------------------
-  // Interseção de tokens relevantes da vaga com o currículo.
-  // Considera apenas tokens com tamanho >=3 e que aparecem com certa relevância.
   const tokensVagaRelevantes: string[] = [];
-  freqVaga.forEach((count, tok) => {
+  freqVaga.forEach((_, tok) => {
     if (tok.length >= 3) tokensVagaRelevantes.push(tok);
   });
 
@@ -346,13 +735,11 @@ export function calcularScoreCurriculo(
       hits++;
       palavrasEncontradasSet.add(tok);
     } else {
-      // não conta como faltante se for stopword ou palavra extremamente comum
       if (tok.length >= 4) palavrasFaltantesSet.add(tok);
     }
   }
   const alinhamentoTokens = (hits / total) * 10;
 
-  // Bigramas (combinações de duas palavras) - contexto mais preciso
   let bigramHits = 0;
   for (const bg of bigramsVaga) {
     if (bigramsCurriculo.has(bg)) bigramHits++;
@@ -360,11 +747,8 @@ export function calcularScoreCurriculo(
   const bigramScore =
     bigramsVaga.length > 0 ? (bigramHits / bigramsVaga.length) * 10 : 0;
 
-  // Média ponderada: 70% tokens + 30% bigrams
   const alinhamento = Math.min(10, alinhamentoTokens * 0.7 + bigramScore * 0.3);
 
-  // --- 4) Palavras-chave ATS (0..10) ----------------------------
-  // Termos técnicos presentes na vaga, comparados com o currículo.
   const termosVagaSet = new Set<string>();
   for (const tok of tokensVaga) {
     if (TERMOS_TECNICOS_COMUNS.has(tok) || tok.length >= 5) {
@@ -378,7 +762,6 @@ export function calcularScoreCurriculo(
     if (setCurriculo.has(t)) hitsAts++;
   });
 
-  // Penalidade se o currículo não tiver nenhum termo técnico
   const temAlgumTermoTecnico = tokensCurriculo.some((t) =>
     TERMOS_TECNICOS_COMUNS.has(t),
   );
@@ -388,15 +771,9 @@ export function calcularScoreCurriculo(
     temAlgumTermoTecnico ? baseATS : Math.min(3, baseATS),
   );
 
-  // --- 5) Consolidação ------------------------------------------
-  // Pesos calibrados: alinhamento à vaga é o fator mais decisivo.
   const notaBruta =
-    estrutura * 0.15 +
-    clareza * 0.15 +
-    alinhamento * 0.45 +
-    ats * 0.25;
+    estrutura * 0.15 + clareza * 0.15 + alinhamento * 0.45 + ats * 0.25;
 
-  // Bônus leve para currículos bem preenchidos (até 0.3)
   const bonus =
     (temResumo ? 0.1 : 0) +
     (temExperiencia ? 0.1 : 0) +
@@ -405,20 +782,17 @@ export function calcularScoreCurriculo(
 
   const nota = Math.min(10, Math.max(0, notaBruta + bonus));
 
-  // Compatibilidade com a vaga: 0..100
-  // Combina tokens, bigrams, ATS e bônus de estrutura
   const compatibilidadeBase =
-    alinhamentoTokens * 0.35 + // 35% sobreposição de tokens
-    bigramScore * 0.25 + // 25% sobreposição contextual
-    ats * 0.30 + // 30% termos técnicos
-    estrutura * 0.05 + // 5% completude
-    clareza * 0.05; // 5% clareza
+    alinhamentoTokens * 0.35 +
+    bigramScore * 0.25 +
+    ats * 0.3 +
+    estrutura * 0.05 +
+    clareza * 0.05;
 
   const compatibilidade = Math.round(
     Math.min(100, Math.max(0, compatibilidadeBase * 10)),
   );
 
-  // --- 6) Sugestões automáticas --------------------------------
   const melhorias: string[] = [];
   if (!temResumo)
     melhorias.push(
@@ -467,7 +841,6 @@ export function calcularScoreCurriculo(
         .join(", ")}.`,
     );
 
-  // Pontos fortes
   const pontosFortes: string[] = [];
   if (estrutura >= 8)
     pontosFortes.push(
@@ -633,11 +1006,12 @@ export function renderHtmlCurriculo(d: any): string {
     experiencias.length > 0
       ? `<h2>Experiência Profissional</h2>${experiencias
           .map((exp: any) => {
-            const bullets = Array.isArray(exp.bullets) && exp.bullets.length > 0
-              ? exp.bullets
-              : exp.descricao
-                ? String(exp.descricao).split("\n").filter(Boolean)
-                : [];
+            const bullets =
+              Array.isArray(exp.bullets) && exp.bullets.length > 0
+                ? exp.bullets
+                : exp.descricao
+                  ? String(exp.descricao).split("\n").filter(Boolean)
+                  : [];
             return `
               <div style="margin-bottom: 10px;">
                 <div class="linha-cabecalho">
@@ -689,9 +1063,10 @@ export function renderHtmlCurriculo(d: any): string {
     idiomas.length > 0
       ? `<h2>Idiomas</h2><ul>${idiomas
           .map((i: any) => {
-            const nome = typeof i === "string" ? i : i.nome || i.idioma || "";
+            const nomeIdioma =
+              typeof i === "string" ? i : i.nome || i.idioma || "";
             const nivel = typeof i === "string" ? "" : i.nivel || "";
-            return `<li class="idioma-item"><strong>${escapar(nome)}</strong>${nivel ? ` — ${escapar(nivel)}` : ""}</li>`;
+            return `<li class="idioma-item"><strong>${escapar(nomeIdioma)}</strong>${nivel ? ` — ${escapar(nivel)}` : ""}</li>`;
           })
           .join("")}</ul>`
       : ""
@@ -782,7 +1157,9 @@ export function extrairDadosCurriculo(
             cargo: e.cargo || e.titulo || "Cargo Profissional",
             empresa: e.empresa || "Empresa / Projeto",
             periodo: e.periodo || "Recente",
-            descricao: Array.isArray(e.descricao) ? e.descricao.join("\n") : e.descricao || e.detalhes || "",
+            descricao: Array.isArray(e.descricao)
+              ? e.descricao.join("\n")
+              : e.descricao || e.detalhes || "",
             bullets: bulletsList,
           };
         })
@@ -798,7 +1175,14 @@ export function extrairDadosCurriculo(
           status: f.status || "",
         }))
       : jovemData?.formacao
-        ? [{ curso: jovemData.formacao, instituicao: jovemData?.instituicao || "Instituição de Ensino", periodo: jovemData?.periodo_formacao || "Concluído", status: "" }]
+        ? [
+            {
+              curso: jovemData.formacao,
+              instituicao: jovemData?.instituicao || "Instituição de Ensino",
+              periodo: jovemData?.periodo_formacao || "Concluído",
+              status: "",
+            },
+          ]
         : [];
 
   const habRaw = rawIAData?.habilidades || [];
@@ -831,20 +1215,14 @@ export function extrairDadosCurriculo(
 
 /* ============================================================
    5) DOWNLOAD DO PDF
-   ------------------------------------------------------------
-   Correções aplicadas:
-   - Validação prévia do HTML com mensagem útil (caso vazio)
-   - Garante que o html2pdf receba SEMPRE uma string HTML
-     (passamos a string diretamente, sem depender de serialização
-      do container DOM)
-   - Fallback robusto caso o backend esteja offline
-   - Logs descritivos em cada etapa para facilitar diagnóstico
    ============================================================ */
 
 function htmlVazio(html: string): boolean {
   if (!html || typeof html !== "string") return true;
-  // remove tags para verificar se há conteúdo real
-  const texto = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const texto = html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return texto.length < 20;
 }
 
@@ -857,12 +1235,7 @@ function nomeArquivoSeguro(nome: string): string {
   );
 }
 
-/**
- * Gera o PDF local usando html2pdf.js passando a STRING HTML
- * (esta é a correção principal do erro "O conteúdo HTML é obrigatório").
- */
 async function gerarPdfFrontend(html: string, nomeBase: string): Promise<void> {
-  // Sanidade: html2pdf exige string não-vazia
   if (!html || typeof html !== "string" || html.trim().length < 20) {
     throw new Error("HTML do currículo está vazio ou inválido.");
   }
@@ -882,9 +1255,6 @@ async function gerarPdfFrontend(html: string, nomeBase: string): Promise<void> {
   };
 
   // @ts-ignore
-  // Passamos diretamente a STRING HTML para o html2pdf,
-  // evitando o problema do "HTML content is required" que
-  // acontecia quando um container DOM vazio era enviado.
   await html2pdf().set(opt).from(html).save();
 }
 
@@ -904,7 +1274,6 @@ export async function baixarCurriculoPDF(
 
   const nomeBase = nomeArquivoSeguro(d.nome);
 
-  // Tenta primeiro via backend (Puppeteer)
   let usouBackend = false;
   try {
     const response = await fetch("http://localhost:3001/pdf/curriculo", {
@@ -939,10 +1308,8 @@ export async function baixarCurriculoPDF(
     );
   }
 
-  // Se o backend funcionou, terminou
   if (usouBackend) return;
 
-  // Fallback: gera o PDF no próprio navegador
   try {
     await gerarPdfFrontend(html, nomeBase);
   } catch (errFront: any) {
@@ -1003,8 +1370,13 @@ export async function baixarCurriculoDOCX(
   );
 
   const contatoRuns: TextRun[] = [];
-  const camposContato = [d.cidade, d.telefone, d.email, d.linkedin, d.github]
-    .filter(Boolean) as string[];
+  const camposContato = [
+    d.cidade,
+    d.telefone,
+    d.email,
+    d.linkedin,
+    d.github,
+  ].filter(Boolean) as string[];
 
   camposContato.forEach((c, i) => {
     if (i > 0) {
@@ -1062,7 +1434,9 @@ export async function baixarCurriculoDOCX(
       children.push(
         new Paragraph({
           spacing: { before: 80, after: 20 },
-          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          tabStops: [
+            { type: TabStopType.RIGHT, position: convertInchesToTwip(6.5) },
+          ],
           children: [
             new TextRun({
               text: exp.cargo,
@@ -1132,7 +1506,9 @@ export async function baixarCurriculoDOCX(
       children.push(
         new Paragraph({
           spacing: { before: 60, after: 20 },
-          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          tabStops: [
+            { type: TabStopType.RIGHT, position: convertInchesToTwip(6.5) },
+          ],
           children: [
             new TextRun({
               text: form.curso,

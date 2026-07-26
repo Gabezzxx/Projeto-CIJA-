@@ -7,6 +7,7 @@ import {
   AlignmentType,
   BorderStyle,
   convertInchesToTwip,
+  TabStopType,
 } from "docx";
 import { normalizarDados, CurriculoDataExport } from "../utils/normalizarDados";
 
@@ -129,7 +130,9 @@ export async function baixarCurriculoDOCX(
       children.push(
         new Paragraph({
           spacing: { before: 80, after: 20 },
-          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          tabStops: [
+            { type: TabStopType.RIGHT, position: convertInchesToTwip(6.5) },
+          ],
           children: [
             new TextRun({
               text: exp.cargo,
@@ -193,7 +196,9 @@ export async function baixarCurriculoDOCX(
       children.push(
         new Paragraph({
           spacing: { before: 60, after: 20 },
-          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          tabStops: [
+            { type: TabStopType.RIGHT, position: convertInchesToTwip(6.5) },
+          ],
           children: [
             new TextRun({
               text: form.curso,
@@ -251,7 +256,7 @@ export async function baixarCurriculoDOCX(
         if (idx > 0) {
           runs.push(
             new TextRun({
-              text: "     •     ",
+              text: "    •    ",
               size: 20,
               color: COR_SUAVES,
               font: "Calibri",
