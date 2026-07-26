@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { replace, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Sidebar } from "../../../components/sideBar/sideBar";
 import { supabase } from "supabaseClient";
 import styles from "./perfil.module.css";
@@ -62,19 +62,7 @@ const calc = (user: any, cv: any) => {
     100,
   );
 
-  return {
-    percent,
-    details: {
-      hasAvatar,
-      hasNome,
-      hasEmail,
-      hasTel,
-      desc,
-      skills,
-      formacao,
-      experiencia,
-    },
-  };
+  return { percent };
 };
 
 export default function Perfil() {
@@ -82,6 +70,7 @@ export default function Perfil() {
   const { idJa } = useParams<{ idJa?: string }>();
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
+
   const [profile, setProfile] = useState({
     nome: "",
     email: "",
@@ -90,19 +79,54 @@ export default function Perfil() {
     avatar: "",
     titulo: "Jovem Aprendiz",
   });
+
   const [cv, setCv] = useState({
     desc: "",
     comp: "",
     exp: '{"experiencias":[]}',
     cur: "[]",
+    pdfUrl: "",
   });
-  const [editing, setEditing] = useState(false);
+
+  const [editingSummary, setEditingSummary] = useState(false);
   const [summary, setSummary] = useState("");
   const [saving, setSaving] = useState(false);
   const [avatarVersion, setAvatarVersion] = useState(0);
   const [vagasCount, setVagasCount] = useState(0);
   const [candidaturasCount, setCandidaturasCount] = useState(0);
   const [activeTab, setActiveTab] = useState("visao");
+
+  // Inline Form States
+  const [showAddFormacao, setShowAddFormacao] = useState(false);
+  const [newCurso, setNewCurso] = useState("");
+  const [newInstituicao, setNewInstituicao] = useState("");
+  const [newInicio, setNewInicio] = useState("");
+  const [newFim, setNewFim] = useState("");
+
+  const [showAddCompetencia, setShowAddCompetencia] = useState(false);
+  const [newCompetencia, setNewCompetencia] = useState("");
+
+  const [showAddExperiencia, setShowAddExperiencia] = useState(false);
+  const [newCargo, setNewCargo] = useState("");
+  const [newEmpresa, setNewEmpresa] = useState("");
+  const [newExpInicio, setNewExpInicio] = useState("");
+  const [newExpFim, setNewExpFim] = useState("");
+  const [newExpDesc, setNewExpDesc] = useState("");
+
+  // Password Change States
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // PDF Upload state
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   useDocumentTitle("CIJA - Perfil");
   const visualizacaoEmpresa = !!idJa;
@@ -112,8 +136,7 @@ export default function Perfil() {
     { id: "formacao", label: "Formação" },
     { id: "competencias", label: "Competências" },
     { id: "experiencia", label: "Experiência" },
-    { id: "projetos", label: "Projetos" },
-    { id: "documentos", label: "Documentos" },
+    { id: "documentos", label: "Currículo" },
   ];
 
   useEffect(() => {
@@ -135,10 +158,12 @@ export default function Perfil() {
     }
     setUid(perfilId);
     await loadProfile(perfilId, user?.email || "");
+
     const { count: vCount } = await supabase
       .from("vaga")
       .select("id_vag", { count: "exact", head: true });
     setVagasCount(vCount || 0);
+
     const { count: cCount } = await supabase
       .from("candidaturas")
       .select("*", { count: "exact", head: true })
@@ -146,12 +171,6 @@ export default function Perfil() {
     setCandidaturasCount(cCount || 0);
   };
 
-
-  // funcao pra ve se user ta online
-  async function userIsLoggedIn(){
-    const user_id = localStorage.getItem('user');
-     return user_id !== null
-  }
   const loadProfile = async (userId: string, userEmail: string) => {
     try {
       const [p, c] = await Promise.all([
@@ -161,23 +180,15 @@ export default function Perfil() {
           .eq("id_ja", userId)
           .maybeSingle(),
         supabase
-          .from("curriculo")
+          .from("curriculo_ja")
           .select("*")
           .eq("id_ja", userId)
           .maybeSingle(),
       ]);
+
       let avatarUrl = "";
       if (p.data) {
         avatarUrl = p.data.avatar_url || p.data.avatar || p.data.foto || "";
-        if (!avatarUrl) {
-          const { data } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(`${userId}/avatar.jpg`);
-          try {
-            const res = await fetch(data.publicUrl, { method: "HEAD" });
-            if (res.ok) avatarUrl = data.publicUrl;
-          } catch {}
-        }
         setProfile({
           nome: p.data.nome || "",
           email: p.data.email || userEmail,
@@ -187,12 +198,14 @@ export default function Perfil() {
           titulo: "Jovem Aprendiz",
         });
       }
+
       if (c.data) {
         setCv({
           desc: c.data.descricao || "",
           comp: c.data.competencias || "",
           exp: c.data.experiencias || '{"experiencias":[]}',
           cur: c.data.curso || "[]",
+          pdfUrl: c.data.pdf_url || "",
         });
         setSummary(c.data.descricao || "");
       }
@@ -201,21 +214,29 @@ export default function Perfil() {
     }
   };
 
-  const exp = useMemo(() => {
+  const expList = useMemo(() => {
     try {
-      return JSON.parse(cv.exp).experiencias || [];
+      const parsed = JSON.parse(cv.exp);
+      return (parsed.experiencias || []).filter(
+        (e: any) => e && (e.cargo || e.empresa),
+      );
     } catch {
       return [];
     }
   }, [cv.exp]);
-  const cur = useMemo(() => {
+
+  const curList = useMemo(() => {
     try {
-      return JSON.parse(cv.cur);
+      const parsed = JSON.parse(cv.cur);
+      return (Array.isArray(parsed) ? parsed : []).filter(
+        (c: any) => c && (c.curso || c.instituicao),
+      );
     } catch {
       return [];
     }
   }, [cv.cur]);
-  const skills = useMemo(
+
+  const skillsList = useMemo(
     () =>
       cv.comp
         .split(",")
@@ -223,15 +244,8 @@ export default function Perfil() {
         .filter(Boolean),
     [cv.comp],
   );
-  const projs = useMemo(() => {
-    try {
-      return JSON.parse(cv.exp).projetos || [];
-    } catch {
-      return [];
-    }
-  }, [cv.exp]);
 
-  const pctData = useMemo(
+  const pct = useMemo(
     () =>
       calc(profile, {
         ...cv,
@@ -239,10 +253,9 @@ export default function Perfil() {
         competencias: cv.comp,
         curso: cv.cur,
         experiencias: cv.exp,
-      }),
+      }).percent,
     [profile, cv],
   );
-  const pct = pctData.percent;
 
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -295,19 +308,228 @@ export default function Perfil() {
   const saveSummary = async () => {
     if (!uid) return;
     setSaving(true);
-    await supabase.from("curriculo").upsert(
+    await supabase.from("curriculo_ja").upsert(
       {
         id_ja: uid,
         descricao: summary,
         competencias: cv.comp,
         experiencias: cv.exp,
         curso: cv.cur,
+        pdf_url: cv.pdfUrl,
       },
       { onConflict: "id_ja" },
     );
     setCv((c) => ({ ...c, desc: summary }));
-    setEditing(false);
+    setEditingSummary(false);
     setSaving(false);
+  };
+
+  const handleAddFormacao = async () => {
+    if (!uid || !newCurso || !newInstituicao) return;
+    const updated = [
+      ...curList,
+      {
+        curso: newCurso,
+        instituicao: newInstituicao,
+        inicio: newInicio,
+        fim: newFim,
+      },
+    ];
+    const str = JSON.stringify(updated);
+    await supabase.from("curriculo_ja").upsert(
+      {
+        id_ja: uid,
+        curso: str,
+        competencias: cv.comp,
+        experiencias: cv.exp,
+        descricao: cv.desc,
+        pdf_url: cv.pdfUrl,
+      },
+      { onConflict: "id_ja" },
+    );
+    setCv((c) => ({ ...c, cur: str }));
+    setNewCurso("");
+    setNewInstituicao("");
+    setNewInicio("");
+    setNewFim("");
+    setShowAddFormacao(false);
+  };
+
+  const handleAddCompetencia = async () => {
+    if (!uid || !newCompetencia.trim()) return;
+    const updatedList = [...skillsList, newCompetencia.trim()];
+    const str = updatedList.join(", ");
+    await supabase.from("curriculo_ja").upsert(
+      {
+        id_ja: uid,
+        competencias: str,
+        curso: cv.cur,
+        experiencias: cv.exp,
+        descricao: cv.desc,
+        pdf_url: cv.pdfUrl,
+      },
+      { onConflict: "id_ja" },
+    );
+    setCv((c) => ({ ...c, comp: str }));
+    setNewCompetencia("");
+    setShowAddCompetencia(false);
+  };
+
+  const handleAddExperiencia = async () => {
+    if (!uid || !newCargo || !newEmpresa) return;
+    const updatedExps = [
+      ...expList,
+      {
+        cargo: newCargo,
+        empresa: newEmpresa,
+        inicio: newExpInicio,
+        fim: newExpFim,
+        descricao: newExpDesc,
+      },
+    ];
+    const payload = JSON.stringify({ experiencias: updatedExps });
+    await supabase.from("curriculo_ja").upsert(
+      {
+        id_ja: uid,
+        experiencias: payload,
+        curso: cv.cur,
+        competencias: cv.comp,
+        descricao: cv.desc,
+        pdf_url: cv.pdfUrl,
+      },
+      { onConflict: "id_ja" },
+    );
+    setCv((c) => ({ ...c, exp: payload }));
+    setNewCargo("");
+    setNewEmpresa("");
+    setNewExpInicio("");
+    setNewExpFim("");
+    setNewExpDesc("");
+    setShowAddExperiencia(false);
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !uid) return;
+    setUploadingPdf(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Pdf = reader.result as string;
+        await supabase.from("curriculo_ja").upsert(
+          {
+            id_ja: uid,
+            pdf_url: base64Pdf,
+            curso: cv.cur,
+            competencias: cv.comp,
+            experiencias: cv.exp,
+            descricao: cv.desc,
+          },
+          { onConflict: "id_ja" },
+        );
+        setCv((c) => ({ ...c, pdfUrl: base64Pdf }));
+        setUploadingPdf(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setUploadingPdf(false);
+    }
+  };
+
+  const openPdfViewer = () => {
+    if (!cv.pdfUrl) return;
+    try {
+      if (cv.pdfUrl.startsWith("data:")) {
+        const arr = cv.pdfUrl.split(",");
+        const mime = arr[0].match(/:(.*?);/)?.[1] || "application/pdf";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        window.open(cv.pdfUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      window.open(cv.pdfUrl, "_blank");
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("A nova senha e a confirmação não coincidem.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const email = user?.email || profile.email;
+
+      if (!email) {
+        setPasswordError("E-mail do usuário não identificado.");
+        setChangingPassword(false);
+        return;
+      }
+
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: oldPassword,
+      });
+
+      if (signInErr) {
+        setPasswordError("Senha anterior incorreta.");
+        setChangingPassword(false);
+        return;
+      }
+
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateErr) {
+        setPasswordError(updateErr.message);
+      } else {
+        if (uid) {
+          const { error: dbErr } = await supabase
+            .from("jovem_aprendiz")
+            .update({ senha: newPassword })
+            .eq("id_ja", uid);
+
+          if (dbErr) {
+            console.error(
+              "Erro ao atualizar senha na tabela jovem_aprendiz:",
+              dbErr,
+            );
+          }
+        }
+
+        setPasswordSuccess("Senha alterada com sucesso!");
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err: any) {
+      setPasswordError(err.message || "Erro ao alterar senha.");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const initials =
@@ -317,6 +539,7 @@ export default function Perfil() {
       .join("")
       .slice(0, 2)
       .toUpperCase() || "JA";
+
   const avatarSrc = profile.avatar
     ? `${profile.avatar}${profile.avatar.includes("?") ? "&" : "?"}v=${avatarVersion}`
     : "";
@@ -324,7 +547,7 @@ export default function Perfil() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <Sidebar />
+        {!visualizacaoEmpresa && <Sidebar />}
         <main className={styles.main}>
           <div className={styles.loading}>Carregando...</div>
         </main>
@@ -344,8 +567,7 @@ export default function Perfil() {
               ) : (
                 <div className={styles.avatarFallback}>{initials}</div>
               )}
-             {!userIsLoggedIn && (
-              <span className={styles.online} />)}
+              <span className={styles.online} />
               {!visualizacaoEmpresa && (
                 <label className={styles.cam}>
                   <input
@@ -359,11 +581,11 @@ export default function Perfil() {
                     height="14"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="white"
+                    stroke="currentColor"
                     strokeWidth="2"
                   >
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
                   </svg>
                 </label>
               )}
@@ -371,15 +593,17 @@ export default function Perfil() {
             <div className={styles.headerInfo}>
               <h1>{profile.nome || "Seu Nome"}</h1>
               <span className={styles.badge}>Jovem Aprendiz</span>
-              <p className={styles.bio}>{cv.desc}</p>
+              <p className={styles.bio}>
+                {cv.desc || "Adicione uma descrição sobre você."}
+              </p>
               <div className={styles.contacts}>
                 <span>
                   <svg
-                    width="14"
-                    height="14"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#a78bfa"
+                    stroke="currentColor"
                     strokeWidth="2"
                   >
                     <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -389,72 +613,52 @@ export default function Perfil() {
                 </span>
                 <span>
                   <svg
-                    width="14"
-                    height="14"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#a78bfa"
+                    stroke="currentColor"
                     strokeWidth="2"
                   >
-                    <path d="M22 16.92v3a2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 0 0 1 2 1.72" />
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                   {phone(profile.tel)}
                 </span>
                 <span>
                   <svg
-                    width="30"
-                    height="30"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#a78bfa"
+                    stroke="currentColor"
                     strokeWidth="2"
-                  ></svg>
+                  >
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
                   {profile.cidade}
                 </span>
               </div>
             </div>
-            {!visualizacaoEmpresa && (
-              <button
-                className={styles.editTop}
-                onClick={() => navigate("/curriculo")}
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-              </button>
-            )}
           </section>
+
           <section className={styles.numbersCard}>
             <h3>
               {visualizacaoEmpresa
                 ? "Perfil do candidato em números"
                 : "Seu perfil em números"}
             </h3>
-            <svg viewBox="0 0 300 60" className={styles.chart}>
-              <path
-                d="M0 40 Q 50 20 100 35 T 200 25 T 300 30"
-                fill="none"
-                stroke="#7c3aed"
-                strokeWidth="3"
-                opacity="0.8"
-              />
+            <svg viewBox="0 0 300 40" className={styles.chart}>
+              <path d="M0 20 Q 75 5 150 15 T 300 10" />
             </svg>
             <div className={styles.stats}>
               <div>
                 <strong>{pct}%</strong>
-                <span>Perfil completo</span>
+                <span>Completo</span>
               </div>
               <div>
                 <strong>{vagasCount}</strong>
-                <span>Vagas compatíveis</span>
+                <span>Vagas</span>
               </div>
               <div>
                 <strong>{candidaturasCount}</strong>
@@ -479,238 +683,575 @@ export default function Perfil() {
         <div className={styles.grid}>
           {activeTab === "visao" && (
             <>
-              <section className={`${styles.card} ${styles.about}`}>
-                <div className={styles.cardHead}>
-                  <h3>Sobre mim</h3>
-                  {!visualizacaoEmpresa && (
-                    <button onClick={() => setEditing(!editing)}>
-                      {editing ? "Cancelar" : "Editar"}
-                    </button>
-                  )}
-                </div>
-                {editing ? (
-                  <>
-                    <textarea
-                      value={summary}
-                      onChange={(e) => setSummary(e.target.value)}
-                      rows={4}
-                      className={styles.textarea}
-                      placeholder="Fale sobre você..."
-                    />
-                    <button
-                      className={styles.save}
-                      onClick={saveSummary}
-                      disabled={saving}
-                    >
-                      {saving ? "Salvando..." : "Salvar"}
-                    </button>
-                  </>
-                ) : (
-                  <p>{cv.desc}</p>
-                )}
-                <div className={styles.tags}>
-                  {skills.slice(0, 5).map((s) => (
-                    <span key={s}>{s}</span>
-                  ))}
-                </div>
-              </section>
-
-              <section className={`${styles.card} ${styles.formacao}`}>
-                <div className={styles.cardHead}>
-                  <h3>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="#7c3aed"
-                    >
-                      <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
-                    </svg>
-                    Formação acadêmica
-                  </h3>
-                </div>
-                {cur.length ? (
-                  cur.map((c: any, i: number) => (
-                    <div key={i} className={styles.item}>
-                      <div className={styles.dot} />
-                      <div>
-                        <strong>{c.curso}</strong>
-                        <p>{c.instituicao}</p>
-                        <small>
-                          {c.inicio} - {c.fim || "Atual"}
-                        </small>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className={styles.empty}>
-                    <p>Você ainda não adicionou formação acadêmica.</p>
-                    {!visualizacaoEmpresa && (
-                      <button onClick={() => navigate("/curriculo")}>
-                        Adicionar formação
-                      </button>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              {!visualizacaoEmpresa && (
-                <section className={`${styles.card} ${styles.acoes}`}>
-                  <h3>Ações rápidas</h3>
-                  {[
-                    {
-                      icon: "◎",
-                      label: "Ver vagas recomendadas",
-                      to: "/vagas",
-                    },
-                    {
-                      icon: "✎",
-                      label: "Atualizar currículo",
-                      to: "/curriculo",
-                    },
-                    {
-                      icon: "⬆",
-                      label: "Enviar documentos",
-                      to: "/documentos",
-                    },
-                    { icon: "✉", label: "Ver mensagens", to: "/mensagens" },
-                  ].map((a) => (
-                    <button key={a.label} onClick={() => navigate(a.to)}>
-                      <span>{a.icon}</span>
-                      {a.label}
+              <div
+                style={{
+                  gridColumn: "span 2",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <section className={`${styles.card} ${styles.about}`}>
+                  <div className={styles.cardHead}>
+                    <h3>
                       <svg
                         width="16"
                         height="16"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
+                        strokeWidth="2"
                       >
-                        <path d="M9 18l6-6-6" />
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
                       </svg>
-                    </button>
-                  ))}
-                </section>
-              )}
-
-              <section className={`${styles.card} ${styles.skills}`}>
-                <div className={styles.cardHead}>
-                  <h3>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="#7c3aed"
-                    >
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                    </svg>
-                    Competências
-                  </h3>
-                  {!visualizacaoEmpresa && (
-                    <button onClick={() => navigate("/curriculo")}>
-                      Editar
-                    </button>
-                  )}
-                </div>
-                <div className={styles.skillGrid}>
-                  {skills.slice(0, 6).map((s, i) => (
-                    <div key={s} className={styles.skill}>
-                      <div className={styles.skillTop}>
-                        <span>{s}</span>
-                        <span>{90 - i * 2}%</span>
-                      </div>
-                      <div className={styles.bar}>
-                        <div style={{ width: `${90 - i * 2}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className={`${styles.card} ${styles.exp}`}>
-                <div className={styles.cardHead}>
-                  <h3>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="#7c3aed"
-                    >
-                      <rect x="2" y="7" width="20" height="14" rx="2" />
-                    </svg>
-                    Experiência
-                  </h3>
-                </div>
-                {exp.length ? (
-                  exp.map((e: any, i: number) => (
-                    <div key={i} className={styles.item}>
-                      <strong>{e.cargo}</strong>
-                      <p>{e.empresa}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className={styles.empty}>
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#4c1d95"
-                      strokeWidth="1.5"
-                    >
-                      <rect x="2" y="7" width="20" height="14" rx="2" />
-                      <circle cx="12" cy="13" r="3" />
-                    </svg>
-                    <p>Você ainda não adicionou experiências profissionais.</p>
+                      Sobre mim
+                    </h3>
                     {!visualizacaoEmpresa && (
-                      <button onClick={() => navigate("/curriculo")}>
-                        Adicionar experiência
+                      <button
+                        onClick={() => setEditingSummary(!editingSummary)}
+                      >
+                        {editingSummary ? "Cancelar" : "Editar"}
                       </button>
                     )}
                   </div>
-                )}
-              </section>
+                  {editingSummary ? (
+                    <>
+                      <textarea
+                        value={summary}
+                        onChange={(e) => setSummary(e.target.value)}
+                        rows={4}
+                        className={styles.textarea}
+                        placeholder="Fale sobre você..."
+                      />
+                      <button
+                        className={styles.save}
+                        onClick={saveSummary}
+                        disabled={saving}
+                      >
+                        {saving ? "Salvando..." : "Salvar"}
+                      </button>
+                    </>
+                  ) : (
+                    <p>{cv.desc || "Nenhuma descrição informada."}</p>
+                  )}
+                  <div className={styles.tags}>
+                    {skillsList.slice(0, 5).map((s) => (
+                      <span key={s}>{s}</span>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={`${styles.card} ${styles.formacao}`}>
+                  <div className={styles.cardHead}>
+                    <h3>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                      </svg>
+                      Formação acadêmica
+                    </h3>
+                    {!visualizacaoEmpresa && (
+                      <button
+                        onClick={() => setShowAddFormacao(!showAddFormacao)}
+                      >
+                        {showAddFormacao ? "Cancelar" : "+ Adicionar"}
+                      </button>
+                    )}
+                  </div>
+
+                  {showAddFormacao && (
+                    <div className={styles.formBox}>
+                      <input
+                        type="text"
+                        placeholder="Nome do curso"
+                        value={newCurso}
+                        onChange={(e) => setNewCurso(e.target.value)}
+                        className={styles.input}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Instituição"
+                        value={newInstituicao}
+                        onChange={(e) => setNewInstituicao(e.target.value)}
+                        className={styles.input}
+                      />
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <input
+                          type="text"
+                          placeholder="Início (ex: 2022)"
+                          value={newInicio}
+                          onChange={(e) => setNewInicio(e.target.value)}
+                          className={styles.input}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Fim (ex: 2025)"
+                          value={newFim}
+                          onChange={(e) => setNewFim(e.target.value)}
+                          className={styles.input}
+                        />
+                      </div>
+                      <div className={styles.formActions}>
+                        <button
+                          className={styles.save}
+                          onClick={handleAddFormacao}
+                        >
+                          Salvar Formação
+                        </button>
+                        <button
+                          className={styles.cancelBtn}
+                          onClick={() => setShowAddFormacao(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {curList.length ? (
+                    curList.map((c: any, i: number) => (
+                      <div key={i} className={styles.item}>
+                        <div className={styles.dot} />
+                        <div>
+                          <strong>{c.curso}</strong>
+                          <p>{c.instituicao}</p>
+                          {(c.inicio || c.fim) && (
+                            <small>
+                              {c.inicio} {c.fim ? `- ${c.fim}` : ""}
+                            </small>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.empty}>
+                      <p>Nenhuma formação acadêmica cadastrada.</p>
+                    </div>
+                  )}
+                </section>
+
+                <section className={`${styles.card} ${styles.skills}`}>
+                  <div className={styles.cardHead}>
+                    <h3>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="16 18 22 12 16 6" />
+                        <polyline points="8 6 2 12 8 18" />
+                      </svg>
+                      Competências
+                    </h3>
+                    {!visualizacaoEmpresa && (
+                      <button
+                        onClick={() =>
+                          setShowAddCompetencia(!showAddCompetencia)
+                        }
+                      >
+                        {showAddCompetencia ? "Cancelar" : "+ Adicionar"}
+                      </button>
+                    )}
+                  </div>
+
+                  {showAddCompetencia && (
+                    <div className={styles.formBox}>
+                      <input
+                        type="text"
+                        placeholder="Ex: JavaScript, Pacote Office..."
+                        value={newCompetencia}
+                        onChange={(e) => setNewCompetencia(e.target.value)}
+                        className={styles.input}
+                      />
+                      <div className={styles.formActions}>
+                        <button
+                          className={styles.save}
+                          onClick={handleAddCompetencia}
+                        >
+                          Salvar Competência
+                        </button>
+                        <button
+                          className={styles.cancelBtn}
+                          onClick={() => setShowAddCompetencia(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={styles.skillsContainer}>
+                    {skillsList.length ? (
+                      skillsList.map((s) => (
+                        <div key={s} className={styles.skillChip}>
+                          {s}
+                        </div>
+                      ))
+                    ) : (
+                      <p style={{ color: "var(--txt-2)", fontSize: "13px" }}>
+                        Nenhuma competência cadastrada
+                      </p>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              {!visualizacaoEmpresa && (
+                <section className={`${styles.card} ${styles.acoes}`}>
+                  <h3>Ações rápidas</h3>
+                  <button onClick={() => navigate("/vagas")}>
+                    <span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect
+                          x="2"
+                          y="7"
+                          width="20"
+                          height="14"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                      </svg>
+                    </span>
+                    Ver vagas recomendadas
+                  </button>
+                  <button onClick={() => navigate("/mensagens")}>
+                    <span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                    </span>
+                    Ver mensagens
+                  </button>
+
+                  <button
+                    onClick={() => setShowPasswordSection(!showPasswordSection)}
+                  >
+                    <span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect
+                          x="3"
+                          y="11"
+                          width="18"
+                          height="11"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </span>
+                    {showPasswordSection
+                      ? " Alterar Senha"
+                      : "Alterar Senha"}
+                  </button>
+
+                  {showPasswordSection && (
+                    <div
+                      className={styles.formBox}
+                      style={{
+                        marginTop: "15px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      <form
+                        onSubmit={handleChangePassword}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "12px",
+                        }}
+                      >
+                        {passwordError && (
+                          <div
+                            className={styles.errorMsg}
+                            style={{ color: "#ff5252", fontSize: "13px" }}
+                          >
+                            {passwordError}
+                          </div>
+                        )}
+                        {passwordSuccess && (
+                          <div
+                            className={styles.successMsg}
+                            style={{ color: "#4caf50", fontSize: "13px" }}
+                          >
+                            {passwordSuccess}
+                          </div>
+                        )}
+
+                        <div className={styles.passwordWrapper}>
+                          <input
+                            type={showOld ? "text" : "password"}
+                            placeholder="Senha anterior"
+                            value={oldPassword}
+                            onChange={(e) => setOldPassword(e.target.value)}
+                            className={styles.input}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.eyeBtn}
+                            onClick={() => setShowOld(!showOld)}
+                          >
+                            {showOld ? (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            ) : (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+
+                        <div className={styles.passwordWrapper}>
+                          <input
+                            type={showNew ? "text" : "password"}
+                            placeholder="Nova senha"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className={styles.input}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.eyeBtn}
+                            onClick={() => setShowNew(!showNew)}
+                          >
+                            {showNew ? (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            ) : (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+
+                        <div className={styles.passwordWrapper}>
+                          <input
+                            type={showConfirm ? "text" : "password"}
+                            placeholder="Confirmar nova senha"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className={styles.input}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className={styles.eyeBtn}
+                            onClick={() => setShowConfirm(!showConfirm)}
+                          >
+                            {showConfirm ? (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                            ) : (
+                              <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+
+                        <div
+                          className={styles.formActions}
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            marginTop: "4px",
+                          }}
+                        >
+                          <button
+                            type="submit"
+                            className={styles.save}
+                            disabled={changingPassword}
+                          >
+                            {changingPassword ? "Salvando..." : "Atualizar"}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.cancelBtn}
+                            onClick={() => setShowPasswordSection(false)}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+                </section>
+              )}
             </>
           )}
 
           {activeTab === "formacao" && (
             <section
               className={`${styles.card} ${styles.formacao}`}
-              style={{ gridColumn: "1/-1" }}
+              style={{ gridColumn: "1 / -1" }}
             >
               <div className={styles.cardHead}>
                 <h3>Formação acadêmica</h3>
                 {!visualizacaoEmpresa && (
-                  <button onClick={() => navigate("/curriculo")}>
-                    + Adicionar
+                  <button onClick={() => setShowAddFormacao(!showAddFormacao)}>
+                    {showAddFormacao ? "Cancelar" : "+ Adicionar"}
                   </button>
                 )}
               </div>
-              {cur.length ? (
-                cur.map((c: any, i: number) => (
+
+              {showAddFormacao && (
+                <div className={styles.formBox}>
+                  <input
+                    type="text"
+                    placeholder="Nome do curso"
+                    value={newCurso}
+                    onChange={(e) => setNewCurso(e.target.value)}
+                    className={styles.input}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Instituição"
+                    value={newInstituicao}
+                    onChange={(e) => setNewInstituicao(e.target.value)}
+                    className={styles.input}
+                  />
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <input
+                      type="text"
+                      placeholder="Início"
+                      value={newInicio}
+                      onChange={(e) => setNewInicio(e.target.value)}
+                      className={styles.input}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Fim"
+                      value={newFim}
+                      onChange={(e) => setNewFim(e.target.value)}
+                      className={styles.input}
+                    />
+                  </div>
+                  <div className={styles.formActions}>
+                    <button className={styles.save} onClick={handleAddFormacao}>
+                      Salvar Formação
+                    </button>
+                    <button
+                      className={styles.cancelBtn}
+                      onClick={() => setShowAddFormacao(false)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {curList.length ? (
+                curList.map((c: any, i: number) => (
                   <div
                     key={i}
                     className={styles.item}
-                    style={{ marginBottom: "16px" }}
+                    style={{ marginBottom: "14px" }}
                   >
                     <div className={styles.dot} />
                     <div>
                       <strong>{c.curso}</strong>
                       <p>{c.instituicao}</p>
-                      <small>
-                        {c.inicio} - {c.fim || "Atual"}
-                      </small>
+                      {(c.inicio || c.fim) && (
+                        <small>
+                          {c.inicio} {c.fim ? `- ${c.fim}` : ""}
+                        </small>
+                      )}
                     </div>
                   </div>
                 ))
               ) : (
-                <p
-                  style={{
-                    color: "#9ca3af",
-                    textAlign: "center",
-                    padding: "20px",
-                  }}
-                >
-                  Você ainda não adicionou formação acadêmica.
+                <p style={{ color: "var(--txt-2)", textAlign: "center" }}>
+                  Nenhuma formação cadastrada.
                 </p>
               )}
             </section>
@@ -719,34 +1260,55 @@ export default function Perfil() {
           {activeTab === "competencias" && (
             <section
               className={`${styles.card} ${styles.skills}`}
-              style={{ gridColumn: "1/-1" }}
+              style={{ gridColumn: "1 / -1" }}
             >
               <div className={styles.cardHead}>
                 <h3>Competências</h3>
                 {!visualizacaoEmpresa && (
-                  <button onClick={() => navigate("/curriculo")}>
-                    + Adicionar
+                  <button
+                    onClick={() => setShowAddCompetencia(!showAddCompetencia)}
+                  >
+                    {showAddCompetencia ? "Cancelar" : "+ Adicionar"}
                   </button>
                 )}
               </div>
-              <div className={styles.skillGrid}>
-                {skills.length ? (
-                  skills.map((s, i) => (
-                    <div key={s} className={styles.skill}>
-                      <div className={styles.skillTop}>
-                        <span>{s}</span>
-                        <span>{Math.min(100, 70 + i * 5)}%</span>
-                      </div>
-                      <div className={styles.bar}>
-                        <div
-                          style={{ width: `${Math.min(100, 70 + i * 5)}%` }}
-                        />
-                      </div>
+
+              {showAddCompetencia && (
+                <div className={styles.formBox}>
+                  <input
+                    type="text"
+                    placeholder="Nova competência"
+                    value={newCompetencia}
+                    onChange={(e) => setNewCompetencia(e.target.value)}
+                    className={styles.input}
+                  />
+                  <div className={styles.formActions}>
+                    <button
+                      className={styles.save}
+                      onClick={handleAddCompetencia}
+                    >
+                      Salvar Competência
+                    </button>
+                    <button
+                      className={styles.cancelBtn}
+                      onClick={() => setShowAddCompetencia(false)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.skillsContainer}>
+                {skillsList.length ? (
+                  skillsList.map((s) => (
+                    <div key={s} className={styles.skillChip}>
+                      {s}
                     </div>
                   ))
                 ) : (
-                  <p style={{ color: "#9ca3af" }}>
-                    Nenhuma competência adicionada
+                  <p style={{ color: "var(--txt-2)" }}>
+                    Nenhuma competência cadastrada
                   </p>
                 )}
               </div>
@@ -754,35 +1316,91 @@ export default function Perfil() {
           )}
 
           {activeTab === "experiencia" && (
-            <section
-              className={`${styles.card} ${styles.exp}`}
-              style={{ gridColumn: "1/-1" }}
-            >
+            <section className={styles.card} style={{ gridColumn: "1 / -1" }}>
               <div className={styles.cardHead}>
                 <h3>Experiência profissional</h3>
+                {!visualizacaoEmpresa && (
+                  <button
+                    onClick={() => setShowAddExperiencia(!showAddExperiencia)}
+                  >
+                    {showAddExperiencia ? "Cancelar" : "+ Adicionar"}
+                  </button>
+                )}
               </div>
-              {exp.length ? (
-                exp.map((e: any, i: number) => (
+
+              {showAddExperiencia && (
+                <div className={styles.formBox}>
+                  <input
+                    type="text"
+                    placeholder="Cargo"
+                    value={newCargo}
+                    onChange={(e) => setNewCargo(e.target.value)}
+                    className={styles.input}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Empresa"
+                    value={newEmpresa}
+                    onChange={(e) => setNewEmpresa(e.target.value)}
+                    className={styles.input}
+                  />
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <input
+                      type="text"
+                      placeholder="Início"
+                      value={newExpInicio}
+                      onChange={(e) => setNewExpInicio(e.target.value)}
+                      className={styles.input}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Fim"
+                      value={newExpFim}
+                      onChange={(e) => setNewExpFim(e.target.value)}
+                      className={styles.input}
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Descrição das atividades"
+                    value={newExpDesc}
+                    onChange={(e) => setNewExpDesc(e.target.value)}
+                    className={styles.textarea}
+                  />
+                  <div className={styles.formActions}>
+                    <button
+                      className={styles.save}
+                      onClick={handleAddExperiencia}
+                    >
+                      Salvar Experiência
+                    </button>
+                    <button
+                      className={styles.cancelBtn}
+                      onClick={() => setShowAddExperiencia(false)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {expList.length ? (
+                expList.map((e: any, i: number) => (
                   <div
                     key={i}
                     className={styles.item}
-                    style={{ marginBottom: "16px" }}
+                    style={{ marginBottom: "14px" }}
                   >
                     <div className={styles.dot} />
                     <div>
                       <strong>{e.cargo}</strong>
                       <p>{e.empresa}</p>
-                      <small>
-                        {e.inicio} - {e.fim || "Atual"}
-                      </small>
+                      {(e.inicio || e.fim) && (
+                        <small>
+                          {e.inicio} {e.fim ? `- ${e.fim}` : ""}
+                        </small>
+                      )}
                       {e.descricao && (
-                        <p
-                          style={{
-                            marginTop: "6px",
-                            color: "#d1d5db",
-                            fontSize: "13px",
-                          }}
-                        >
+                        <p style={{ marginTop: "4px", color: "var(--txt-2)" }}>
                           {e.descricao}
                         </p>
                       )}
@@ -791,70 +1409,76 @@ export default function Perfil() {
                 ))
               ) : (
                 <div className={styles.empty}>
-                  <p>Você ainda não adicionou experiências profissionais.</p>
-                  {!visualizacaoEmpresa && (
-                    <button onClick={() => navigate("/curriculo")}>
-                      Adicionar primeira experiência
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-          {activeTab === "projetos" && (
-            <section className={styles.card} style={{ gridColumn: "1/-1" }}>
-              <div className={styles.cardHead}>
-                <h3>Projetos</h3>
-              </div>
-              {projs.length ? (
-                projs.map((p: any, i: number) => (
-                  <div key={i} className={styles.item}>
-                    <strong>{p.nome}</strong>
-                    <p>{p.descricao}</p>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.empty}>
-                  <p>Nenhum projeto cadastrado</p>
-                  {!visualizacaoEmpresa && (
-                    <button onClick={() => navigate("/curriculo")}>
-                      Adicionar projeto
-                    </button>
-                  )}
+                  <p>Nenhuma experiência profissional cadastrada.</p>
                 </div>
               )}
             </section>
           )}
 
           {activeTab === "documentos" && (
-            <section className={styles.card} style={{ gridColumn: "1/-1" }}>
+            <section className={styles.card} style={{ gridColumn: "1 / -1" }}>
               <div className={styles.cardHead}>
-                <h3>Documentos</h3>
+                <h3>Currículo em PDF</h3>
               </div>
               <div className={styles.empty}>
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#4c1d95"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 0 0 0 2 2h12a2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-                {visualizacaoEmpresa && (
-                  <p>Nehnum RG,CPF informado pelo candidato</p>
+                {cv.pdfUrl ? (
+                  <div>
+                    <p>
+                      Seu currículo em PDF está cadastrado e visível para
+                      empresas.
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        justifyContent: "center",
+                        marginTop: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={openPdfViewer}
+                        className={styles.save}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          cursor: "pointer",
+                          border: "none",
+                        }}
+                      >
+                        Visualizar PDF em Nova Aba
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p>Nenhum currículo em PDF enviado ainda.</p>
                 )}
-                {!visualizacaoEmpresa && <p>Adicione seus documentos aqui</p>}
+
+                {!visualizacaoEmpresa && (
+                  <div style={{ marginTop: "16px" }}>
+                    <label
+                      className={styles.save}
+                      style={{ cursor: "pointer", display: "inline-block" }}
+                    >
+                      {uploadingPdf ? "Enviando..." : "Enviar / Atualizar PDF"}
+                      <input
+                        type="file"
+                        hidden
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             </section>
           )}
         </div>
 
         {visualizacaoEmpresa && (
-          <button style={{background: "#1e1633",color:" #c4b5fd",border: "1px solid #2a1f4d;"
-          }} className={styles.voltar} onClick={() => navigate(-1)}>
+          <button className={styles.voltar} onClick={() => navigate(-1)}>
             Voltar
           </button>
         )}

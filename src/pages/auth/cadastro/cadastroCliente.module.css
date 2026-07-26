@@ -379,8 +379,8 @@ form {
 .toggleSenha {
   position: absolute;
   top: 8px;
-  right: 10px;
-  width: 50px;
+  right: 25px; 
+  width: 20px;
   height: 70%;
   border: none;
   background: transparent;
