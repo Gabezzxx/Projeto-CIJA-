@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    // Adicione 'dist/' e 'dist/**' aqui para o ESLint ignorar a pasta de build
+    ignores: ['eslint.config.mjs', 'dist/'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
