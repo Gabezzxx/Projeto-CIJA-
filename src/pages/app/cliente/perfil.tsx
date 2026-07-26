@@ -973,9 +973,7 @@ export default function Perfil() {
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                       </svg>
                     </span>
-                    {showPasswordSection
-                      ? " Alterar Senha"
-                      : "Alterar Senha"}
+                    {showPasswordSection ? " Alterar Senha" : "Alterar Senha"}
                   </button>
 
                   {showPasswordSection && (
