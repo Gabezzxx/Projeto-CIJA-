@@ -42,21 +42,22 @@ export default function ProtectedRoute({
         const userId = session.user.id;
         const emailAuth = session.user.email?.trim().toLowerCase();
 
-        // 1. Jovem
+        // 1. Jovem (Busca segura por user_id e fallback seguro por email no servidor)
         let { data: jovem } = await supabase
           .from("jovem_aprendiz")
           .select("*")
           .eq("user_id", userId)
           .maybeSingle();
+
         if (!jovem && emailAuth) {
-          const { data: listaJovens } = await supabase
+          const { data: jovemPorEmail } = await supabase
             .from("jovem_aprendiz")
-            .select("*");
-          jovem =
-            listaJovens?.find(
-              (j) => j.email?.trim().toLowerCase() === emailAuth,
-            ) || null;
+            .select("*")
+            .eq("email", emailAuth)
+            .maybeSingle();
+          jovem = jovemPorEmail || null;
         }
+
         if (jovem) {
           if (mounted) {
             setIsJovem(true);
@@ -69,21 +70,22 @@ export default function ProtectedRoute({
           return;
         }
 
-        // 2. Empresa
+        // 2. Empresa (Busca segura por id_em e fallback seguro por email no servidor)
         let { data: empresa } = await supabase
           .from("empresa")
           .select("*")
           .eq("id_em", userId)
           .maybeSingle();
+
         if (!empresa && emailAuth) {
-          const { data: listaEmpresas } = await supabase
+          const { data: empresaPorEmail } = await supabase
             .from("empresa")
-            .select("*");
-          empresa =
-            listaEmpresas?.find(
-              (e) => e.email?.trim().toLowerCase() === emailAuth,
-            ) || null;
+            .select("*")
+            .eq("email", emailAuth)
+            .maybeSingle();
+          empresa = empresaPorEmail || null;
         }
+
         if (empresa) {
           if (mounted) {
             setIsEmpresa(true);
@@ -116,7 +118,7 @@ export default function ProtectedRoute({
     }
   }, [loading, temAcesso, isJovem, isEmpresa]);
 
-  // ==================== TELA DE CARREGAMENTO PROFISSIONAL ====================
+  // ==================== TELA DE CARREGAMENTO ====================
   if (loading) {
     return (
       <div

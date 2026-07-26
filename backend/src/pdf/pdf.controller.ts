@@ -24,10 +24,7 @@ export class PdfController {
 
   @Post('curriculo')
   @HttpCode(200)
-  async gerarCurriculoPdf(
-    @Body() body: GerarPdfDto,
-    @Res() res: Response,
-  ) {
+  async gerarCurriculoPdf(@Body() body: GerarPdfDto, @Res() res: Response) {
     // O ValidationPipe global (whitelist + transform) já validou o DTO
     // Mas mantemos um fallback manual em caso de body vazio.
     const html = body?.html;
