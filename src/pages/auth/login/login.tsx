@@ -18,8 +18,6 @@ import {
   XCircle, // X erro
   AlertCircle, // Aviso
 } from "lucide-react";
-import { StringList } from "@google/genai";
-import { BooleanLiteral } from "typescript";
 
 
           //

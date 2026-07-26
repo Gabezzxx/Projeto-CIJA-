@@ -146,7 +146,7 @@ export default function CriarNovaSenha() {
           <>
             {notificacao && <div className={styles.alert}>{notificacao}</div>}
 
-            <img src={cija_logo} className={styles.logo} />
+            <img src={cija_logo} className={styles.logo} alt="cija-logo" />
 
             <h2>Criar Nova Senha</h2>
 

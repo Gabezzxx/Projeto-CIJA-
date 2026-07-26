@@ -1145,12 +1145,12 @@ export function extrairDadosCurriculo(
           } else if (typeof e.descricao === "string" && e.descricao.trim()) {
             bulletsList = e.descricao
               .split("\n")
-              .map((b: string) => b.replace(/^[•\-\*]\s*/, "").trim())
+              .map((b: string) => b.replace(/^[•\-*]\s*/, "").trim())
               .filter(Boolean);
           } else if (typeof e.detalhes === "string" && e.detalhes.trim()) {
             bulletsList = e.detalhes
               .split("\n")
-              .map((b: string) => b.replace(/^[•\-\*]\s*/, "").trim())
+              .map((b: string) => b.replace(/^[•\-*]\s*/, "").trim())
               .filter(Boolean);
           }
           return {
