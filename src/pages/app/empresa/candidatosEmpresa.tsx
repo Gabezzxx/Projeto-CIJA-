@@ -34,6 +34,17 @@ const CandidatosEmpresa: React.FC = () => {
 
   useDocumentTitle("CIJA - Candidatos às suas Vagas");
 
+  const escapeHtml = (input: unknown): string => {
+    if (input === null || input === undefined) return "";
+    return String(input)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/`/g, "&#96;");
+  };
+
   useEffect(() => {
     buscarCandidatos();
   }, []);
@@ -108,21 +119,31 @@ const CandidatosEmpresa: React.FC = () => {
 
     const { nome, telefone, endereco, email, descricao, competencias, experiencias, curso } = candidatura.curriculo;
 
+    const safeNome = escapeHtml(nome);
+    const safeTelefone = escapeHtml(telefone);
+    const safeEmail = escapeHtml(email);
+    const safeEndereco = escapeHtml(endereco);
+    const safeDescricao = escapeHtml(descricao);
+    const safeExperiencias = escapeHtml(experiencias);
+    const safeCurso = escapeHtml(curso);
+
     const janelaImpressao = window.open("", "_blank");
     if (!janelaImpressao) {
       alert("Por favor, permita pop-ups para visualizar o currículo.");
       return;
     }
 
-    // Formata as competências exatamente como no cliente
-    const listaSkills = competencias 
-      ? competencias.split(",").map(skill => `<li>${skill.trim()}</li>`).join("")
+    const listaSkills = competencias
+      ? competencias
+          .split(",")
+          .map((s) => `<li>${escapeHtml(s.trim())}</li>`)
+          .join("")
       : "<li>Qualificação Profissional</li>";
 
     janelaImpressao.document.write(`
       <html>
         <head>
-          <title>Currículo Profissional - ${nome || "Candidato"}</title>
+          <title>Currículo Profissional - ${safeNome || "Candidato"}</title>
           <style>
             @page {
               size: A4;
@@ -249,12 +270,12 @@ const CandidatosEmpresa: React.FC = () => {
           <div class="cv-container">
             <div class="sidebar">
               <h3>Contato</h3>
-              <p><strong>Telefone</strong>${telefone || "Não informado"}</p>
-              <p><strong>E-mail</strong>${email || "Não informado"}</p>
-              <p><strong>Localização</strong>${endereco || "Não informado"}</p>
+              <p><strong>Telefone</strong>${safeTelefone || "Não informado"}</p>
+              <p><strong>E-mail</strong>${safeEmail || "Não informado"}</p>
+              <p><strong>Localização</strong>${safeEndereco || "Não informado"}</p>
 
               <h3>Formação</h3>
-              <p><strong>Curso Atual</strong>${curso || "Não informado"}</p>
+              <p><strong>Curso Atual</strong>${safeCurso || "Não informado"}</p>
               <p><strong>Instituição</strong>Centro de Integração Jovem Aprendiz (CIJA)</p>
 
               <h3>Competências</h3>
@@ -263,15 +284,15 @@ const CandidatosEmpresa: React.FC = () => {
 
             <div class="main-content">
               <div class="header-block">
-                <h1>${nome || "Nome do Candidato"}</h1>
+                <h1>${safeNome || "Nome do Candidato"}</h1>
                 <div class="subtitle">Jovem Aprendiz / Perfil Técnico</div>
               </div>
 
               <div class="section-title">Resumo Profissional</div>
-              <div class="content-text">${descricao || "Sem resumo profissional preenchido."}</div>
+              <div class="content-text">${safeDescricao || "Sem resumo profissional preenchido."}</div>
 
               <div class="section-title">Experiência e Projetos</div>
-              <div class="exp-title">Desenvolvimento Prático — ${experiencias || "Projetos Acadêmicos"}</div>
+              <div class="exp-title">Desenvolvimento Prático — ${safeExperiencias || "Projetos Acadêmicos"}</div>
               <div class="exp-sub">CIJA — Centro de Integração Jovem Aprendiz</div>
               <div class="content-text" style="margin-bottom: 0;">
                 Atuação ativa e prática em atividades de capacitação corporativa voltadas ao mercado de trabalho, com foco no desenvolvimento de competências técnicas, autonomia operacional e resolução de problemas práticos.
@@ -371,13 +392,12 @@ const CandidatosEmpresa: React.FC = () => {
                       <p><strong>Nome:</strong> {candidatura.curriculo.nome}</p>
                       <p><strong>Telefone:</strong> {candidatura.curriculo.telefone || "Não informado"}</p>
                       <p style={{ color: "#94a3b8", fontSize: "13px", fontStyle: "italic", marginTop: "0.5rem" }}>
-                        "{candidatura.curriculo.descricao || "Sem resumo profissional"}"
+                        {candidatura.curriculo.descricao || "Sem resumo profissional"}
                       </p>
                     </div>
                   ) : (
                     <div style={{ color: "#f1f5f9", fontSize: "14px" }}>
-                      <p><strong>Candidato ID:</strong> {candidatura.id_candidato.substring(0, 8)}...</p>
-                      <p style={{ color: "#94a3b8", fontSize: "12px" }}>Perfil detalhado pendente de preenchimento pelo usuário.</p>
+                      <p>Perfil detalhado pendente de preenchimento pelo candidato.</p>
                     </div>
                   )}
                 </div>

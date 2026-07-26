@@ -90,19 +90,19 @@ export default function LoginEmpresa() {
         });
 
       if (authError || !authData.user) {
-        throw new Error("Email ou senha inválidos.");
+        throw new Error("E-mail ou senha inválidos.");
       }
 
       // Busca dados extras da tabela empresa para validação de role e confirmação
       const { data: empresa, error: empresaError } = await supabase
         .from("empresa")
         .select("email, email_confirmado")
-        .eq("email", authData.user.email)
+        .eq("id_em", authData.user.id)
         .maybeSingle();
 
       if (empresaError || !empresa) {
         await supabase.auth.signOut();
-        throw new Error("Acesso permitido apenas para empresas.");
+        throw new Error("E-mail ou senha inválidos.");
       }
 
       // CORREÇÃO DE ROTA DE EMAIL: Impede login de empresa não confirmada

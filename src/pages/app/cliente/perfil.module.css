@@ -763,7 +763,7 @@
   bottom: 24px;
   left: 50%;
 
-  background: linear-gradient(180deg, var(--primary), #5b21b6);
+ 
   color: white;
   border: none;
   padding: 12px 24px;
@@ -771,12 +771,12 @@
   cursor: pointer;
   font-weight: 700;
   font-size: 14px;
-  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.4);
+
   z-index: 50;
   transition: all 0.2s;
 }
 .voltar:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.20);
  
 }
 

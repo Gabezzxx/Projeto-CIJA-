@@ -1,0 +1,1303 @@
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+  BorderStyle,
+  convertInchesToTwip,
+} from "docx";
+// @ts-ignore - html2pdf.js não tem tipos oficiais
+import html2pdf from "html2pdf.js";
+
+/* ============================================================
+   1) STOPWORDS / DICIONÁRIO LÉXICO PARA O SCORE REAL
+   ============================================================ */
+
+const STOPWORDS = new Set<string>([
+  "a","o","as","os","um","uma","uns","umas","de","da","do","das","dos","e","ou",
+  "em","no","na","nos","nas","por","para","com","sem","sob","sobre","entre",
+  "que","se","ja","já","foi","ser","tem","ter","sido","sao","são","ter","tido",
+  "eu","voce","você","tu","ele","ela","nos","nós","eles","elas","meu","minha",
+  "seu","sua","nosso","nossa","este","esta","isto","aquilo","isso","esse","essa",
+  "muito","muita","pouco","pouca","mais","menos","tambem","também","apenas",
+  "ate","até","desde","como","quando","onde","aqui","ali","la","lá","cá",
+  "the","and","or","of","to","in","for","on","at","by","an","a","i","is","it",
+  "be","as","if","so","we","he","she","they","you","this","that","with","from",
+  "vaga","oportunidade","cargo","empresa","profissional","perfil","candidato",
+  "atuar","atuando","atuação","atuei","trabalhei","trabalho","experiencia",
+  "experiência","anos","ano","meses","mes","local","atuais","anterior",
+  "etc","ex","i","ii","iii","iv"
+]);
+
+/**
+ * Tokeniza um texto, removendo pontuação, acentos, stopwords e palavras curtas.
+ */
+function tokenizar(texto: string): string[] {
+  if (!texto || typeof texto !== "string") return [];
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s\-+#./]/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
+}
+
+/**
+ * Retorna a frequência de cada token significativo.
+ */
+function frequencia(tokens: string[]): Map<string, number> {
+  const mapa = new Map<string, number>();
+  for (const t of tokens) {
+    mapa.set(t, (mapa.get(t) || 0) + 1);
+  }
+  return mapa;
+}
+
+/**
+ * Detecta bigrams (pares de palavras) para análise contextual.
+ */
+function gerarBigramas(tokens: string[]): string[] {
+  const bigrams: string[] = [];
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const a = tokens[i];
+    const b = tokens[i + 1];
+    if (a.length >= 3 && b.length >= 3) bigrams.push(`${a} ${b}`);
+  }
+  return bigrams;
+}
+
+/* ============================================================
+   2) MOTOR DE SCORE (NOTA + COMPATIBILIDADE)
+   ------------------------------------------------------------
+   Critérios avaliados (0 a 10 cada):
+   1. Estrutura textual    (presença de seções obrigatórias)
+   2. Clareza executiva    (uso de verbos de ação, métricas, %)
+   3. Alinhamento à vaga   (overlap TF-IDF + bigrams com a descrição)
+   4. Palavras-chave ATS   (termos técnicos compatíveis com a vaga)
+
+   A nota final é a média ponderada:
+     - 15% estrutura
+     - 15% clareza
+     - 45% alinhamento à vaga  (fator mais relevante)
+     - 25% palavras-chave ATS
+
+   A compatibilidade com a vaga é dada por:
+     - 60% alinhamento de tokens e bigrams
+     - 30% cobertura de termos técnicos
+     - 10% bônus por estrutura/clareza
+   ============================================================ */
+
+export interface AnaliseScore {
+  nota: number;             // 0 a 10
+  compatibilidade: number;  // 0 a 100 (%)
+  criterios: {
+    estruturaTextual: number;
+    clarezaExecutiva: number;
+    alinhamentoVaga: number;
+    palavrasChaveAts: number;
+  };
+  palavrasChaveEncontradas: string[];
+  palavrasChaveFaltantes: string[];
+  melhorias: string[];
+  pontosFortes: string[];
+  detalhes: {
+    tokensVaga: number;
+    tokensCurrículo: number;
+    tokensMatch: number;
+    bigramsVaga: number;
+    bigramsCurrículo: number;
+    bigramsMatch: number;
+    termosTecnicosVaga: number;
+    termosTecnicosMatch: number;
+    totalExperiencias: number;
+    totalHabilidades: number;
+    totalFormacao: number;
+    tamanhoResumoCaracteres: number;
+  };
+}
+
+const VERBOS_ACAO = new Set([
+  "desenvolvi","desenvolveu","desenvolver","criei","criou","criar","implementei",
+  "implementou","implementar","liderei","liderou","liderar","gerenciei",
+  "gerenciou","gerenciar","coordenei","coordenou","coordenar","otimizei",
+  "otimizou","otimizar","automatizei","automatizou","automatizar","reduzi",
+  "reduziu","reduzir","aumentei","aumentou","aumentar","projetei","projetou",
+  "projetar","planejei","planejou","planejar","executei","executou","executar",
+  "realizei","realizou","realizar","conquistei","conquistou","conquistar",
+  "ministrei","ministrou","ministrar","treinei","treinou","treinar",
+  "construi","construiu","construir","mantive","manteve","manter",
+  "elaborei","elaborou","elaborar","analisei","analisou","analisar",
+  "aplicou","aplicar","contribui","contribuiu","contribuir","apoiei","apoiou",
+  "responsabilizei","responsabilizou","responsabilizar","atuei","atuou","atuar",
+  "trabalhei","trabalhou","trabalhar","promovi","promoveu","promover",
+  "alcancei","alcancou","alcancar","superou","superar","estabeleceu",
+  "estabeleci","estabelecer","mapeei","mapeou","mapear","catalisei",
+  "catalisou","catalisar","reestruturei","reestruturou","reestruturar"
+]);
+
+const TERMOS_TECNICOS_COMUNS = new Set([
+  "javascript","typescript","react","node","nodejs","python","java","sql",
+  "mysql","postgres","postgresql","mongodb","docker","kubernetes","aws","azure","gcp",
+  "git","github","gitlab","bitbucket","html","css","sass","less","tailwind","figma",
+  "photoshop","illustrator","canva","excel","word","powerpoint","office","libre",
+  "sap","salesforce","jira","trello","asana","notion","scrum","agile","kanban",
+  "lean","seo","sem","google","analytics","adsense","ads","meta","tiktok","linkedin",
+  "api","rest","graphql","microsservicos","microsserviços","frontend","backend",
+  "fullstack","devops","qa","testes","jest","cypress","selenium","linux","windows",
+  "macos","android","ios","swift","kotlin","flutter","dart","vue","angular",
+  "nextjs","nestjs","express","django","flask","spring","hibernate","redis",
+  "rabbitmq","kafka","terraform","ansible","jenkins","ci","cd","pipeline",
+  "machine","learning","ia","ai","nlp","data","powerbi","tableau","etl",
+  "elt","dax","r","scala","spark","hadoop","vba","macros",
+  "atendimento","cliente","vendas","negociacao","negociação","crm","erp",
+  "rh","recrutamento","selecao","seleção","treinamento","onboarding",
+  "folha","ponto","esocial","contabilidade","fiscal","financeiro",
+  "cobranca","cobrança","credito","crédito","conta","pagamento","banco",
+  "tesouraria","compras","logistica","logística","estoque","inventario",
+  "inventário","marketing","conteudo","conteúdo","design","ux","ui",
+  "produto","okr","kpi","pmo","compliance","auditoria","controladoria",
+  "javascript","typescript","react","nodejs","angularjs","reactjs",
+  "googleads","facebookads","tagmanager","looker","metabase","airflow",
+  "databricks","snowflake","redshift","bigquery","lambda","s3","ec2",
+  "route53","cloudfront","iam","vpc","ecs","eks","fargate",
+  "photoshop","illustrator","premiere","aftereffects","lightroom",
+  "blender","maya","3dsmax","unity","unrealengine","c++","c#","golang",
+  "rust","ruby","rails","laravel","symfony","codeigniter","wordpress",
+  "magento","shopify","woocommerce","prestashop","salesforce","hubspot",
+  "zendesk","intercom","freshdesk","pipedrive","rdstation","mailchimp",
+  "sendgrid","twilio","stripe","paypal","mercadopago","pagseguro",
+  "reactnative","expo","ionic","cordova","phonegap","xamarin","nativescript"
+]);
+
+/**
+ * Extrai o texto corrido de qualquer objeto de currículo,
+ * percorrendo recursivamente campos string.
+ */
+function achatarTexto(obj: any, acumulado: string[] = []): string[] {
+  if (obj === null || obj === undefined) return acumulado;
+  if (typeof obj === "string") {
+    if (obj.trim().length > 0) acumulado.push(obj);
+    return acumulado;
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) achatarTexto(item, acumulado);
+    return acumulado;
+  }
+  if (typeof obj === "object") {
+    for (const key of Object.keys(obj)) {
+      achatarTexto(obj[key], acumulado);
+    }
+  }
+  return acumulado;
+}
+
+/**
+ * Recupera a string-resumo do currículo em vários formatos.
+ */
+function obterResumo(dados: any): string {
+  if (!dados || typeof dados !== "object") return "";
+  const candidatos = [
+    dados.resumo_profissional,
+    dados.resumoProfissional,
+    dados.resumo,
+    dados.dados_pessoais?.resumo,
+    dados.dadosPessoais?.resumo,
+  ];
+  for (const c of candidatos) {
+    if (typeof c === "string" && c.trim().length > 0) return c;
+  }
+  return "";
+}
+
+/**
+ * Calcula a nota analítica e a compatibilidade com a vaga,
+ * com base no conteúdo real do currículo e na descrição da vaga.
+ */
+export function calcularScoreCurriculo(
+  dadosCurriculo: any,
+  vagaDescricao: string,
+): AnaliseScore {
+  // Texto completo do currículo: tudo (resumo, experiências, habilidades...)
+  const partesBrutas = achatarTexto(dadosCurriculo);
+  const curriculoTextoBruto = partesBrutas.join(" ");
+  const resumoStr = obterResumo(dadosCurriculo);
+
+  const tokensCurriculo = tokenizar(curriculoTextoBruto);
+  const freqCurriculo = frequencia(tokensCurriculo);
+  const setCurriculo = new Set(tokensCurriculo);
+  const bigramsCurriculo = new Set(gerarBigramas(tokensCurriculo));
+
+  const tokensVaga = tokenizar(vagaDescricao || "");
+  const freqVaga = frequencia(tokensVaga);
+  const setVaga = new Set(tokensVaga);
+  const bigramsVaga = gerarBigramas(tokensVaga);
+
+  // --- 1) Estrutura textual (0..10) -----------------------------
+  const temResumo = resumoStr.trim().length > 0;
+  const temExperiencia =
+    Array.isArray(dadosCurriculo?.experiencias) &&
+    dadosCurriculo.experiencias.length > 0;
+  const temFormacao =
+    Array.isArray(dadosCurriculo?.formacao) &&
+    dadosCurriculo.formacao.length > 0;
+  const temHabilidades =
+    Array.isArray(dadosCurriculo?.habilidades) &&
+    dadosCurriculo.habilidades.length > 0;
+  const temContato = !!(
+    dadosCurriculo?.dados_pessoais?.email ||
+    dadosCurriculo?.dadosPessoais?.email ||
+    dadosCurriculo?.email
+  );
+  const temNome = !!(
+    dadosCurriculo?.dados_pessoais?.nome ||
+    dadosCurriculo?.dadosPessoais?.nome ||
+    dadosCurriculo?.nome
+  );
+
+  let estrutura = 0;
+  if (temNome) estrutura += 0.5;
+  if (temContato) estrutura += 1.0;
+  if (temResumo) estrutura += 2.5;
+  if (temExperiencia) estrutura += 2.5;
+  if (temFormacao) estrutura += 1.5;
+  if (temHabilidades) estrutura += 1.5;
+  // bônus: 2 ou mais experiências
+  if (temExperiencia && dadosCurriculo.experiencias.length >= 2) estrutura += 0.5;
+  if (temExperiencia && dadosCurriculo.experiencias.length >= 3) estrutura += 0.3;
+  // bônus: resumo entre 80 e 800 caracteres (executivo)
+  if (temResumo && resumoStr.length >= 80 && resumoStr.length <= 800) {
+    estrutura += 0.5;
+  }
+  estrutura = Math.min(10, estrutura);
+
+  // --- 2) Clareza executiva (0..10) -----------------------------
+  let clareza = 0;
+  if (resumoStr.length >= 80 && resumoStr.length <= 800) clareza += 2.0;
+  if (resumoStr.length > 30) clareza += 1.0;
+
+  // verbos de ação no texto inteiro (densidade)
+  let qtdVerbos = 0;
+  VERBOS_ACAO.forEach((v) => {
+    if (setCurriculo.has(v)) qtdVerbos++;
+  });
+  if (qtdVerbos >= 12) clareza += 3.5;
+  else if (qtdVerbos >= 8) clareza += 3.0;
+  else if (qtdVerbos >= 5) clareza += 2.0;
+  else if (qtdVerbos >= 3) clareza += 1.5;
+  else if (qtdVerbos >= 1) clareza += 0.8;
+
+  // métricas (%, R$, números) no texto
+  const temMetricas =
+    /\d+\s*%/.test(curriculoTextoBruto) ||
+    /R\$\s*\d+/.test(curriculoTextoBruto) ||
+    /\d+\s*(usuarios|usu[áa]rios|clientes|projetos|equipe|pessoas|funcion[áa]rios|vendas|leads)/i.test(
+      curriculoTextoBruto,
+    );
+  if (temMetricas) clareza += 2.0;
+
+  // habilidades densas
+  if (
+    Array.isArray(dadosCurriculo?.habilidades) &&
+    dadosCurriculo.habilidades.length >= 8
+  )
+    clareza += 2.0;
+  else if (
+    Array.isArray(dadosCurriculo?.habilidades) &&
+    dadosCurriculo.habilidades.length >= 5
+  )
+    clareza += 1.5;
+  else if (
+    Array.isArray(dadosCurriculo?.habilidades) &&
+    dadosCurriculo.habilidades.length >= 3
+  )
+    clareza += 1.0;
+
+  // bullets em experiências (clareza executiva)
+  let totalBullets = 0;
+  if (Array.isArray(dadosCurriculo?.experiencias)) {
+    for (const exp of dadosCurriculo.experiencias) {
+      if (Array.isArray(exp.bullets)) totalBullets += exp.bullets.length;
+    }
+  }
+  if (totalBullets >= 8) clareza += 1.0;
+  else if (totalBullets >= 4) clareza += 0.5;
+
+  clareza = Math.min(10, clareza);
+
+  // --- 3) Alinhamento à vaga (0..10) ----------------------------
+  // Interseção de tokens relevantes da vaga com o currículo.
+  // Considera apenas tokens com tamanho >=3 e que aparecem com certa relevância.
+  const tokensVagaRelevantes: string[] = [];
+  freqVaga.forEach((count, tok) => {
+    if (tok.length >= 3) tokensVagaRelevantes.push(tok);
+  });
+
+  let hits = 0;
+  const total = Math.max(1, tokensVagaRelevantes.length);
+  const palavrasEncontradasSet = new Set<string>();
+  const palavrasFaltantesSet = new Set<string>();
+
+  for (const tok of tokensVagaRelevantes) {
+    if (setCurriculo.has(tok)) {
+      hits++;
+      palavrasEncontradasSet.add(tok);
+    } else {
+      // não conta como faltante se for stopword ou palavra extremamente comum
+      if (tok.length >= 4) palavrasFaltantesSet.add(tok);
+    }
+  }
+  const alinhamentoTokens = (hits / total) * 10;
+
+  // Bigramas (combinações de duas palavras) - contexto mais preciso
+  let bigramHits = 0;
+  for (const bg of bigramsVaga) {
+    if (bigramsCurriculo.has(bg)) bigramHits++;
+  }
+  const bigramScore =
+    bigramsVaga.length > 0 ? (bigramHits / bigramsVaga.length) * 10 : 0;
+
+  // Média ponderada: 70% tokens + 30% bigrams
+  const alinhamento = Math.min(10, alinhamentoTokens * 0.7 + bigramScore * 0.3);
+
+  // --- 4) Palavras-chave ATS (0..10) ----------------------------
+  // Termos técnicos presentes na vaga, comparados com o currículo.
+  const termosVagaSet = new Set<string>();
+  for (const tok of tokensVaga) {
+    if (TERMOS_TECNICOS_COMUNS.has(tok) || tok.length >= 5) {
+      termosVagaSet.add(tok);
+    }
+  }
+
+  let hitsAts = 0;
+  const totalAts = Math.max(1, termosVagaSet.size);
+  termosVagaSet.forEach((t) => {
+    if (setCurriculo.has(t)) hitsAts++;
+  });
+
+  // Penalidade se o currículo não tiver nenhum termo técnico
+  const temAlgumTermoTecnico = tokensCurriculo.some((t) =>
+    TERMOS_TECNICOS_COMUNS.has(t),
+  );
+  const baseATS = (hitsAts / totalAts) * 10;
+  const ats = Math.min(
+    10,
+    temAlgumTermoTecnico ? baseATS : Math.min(3, baseATS),
+  );
+
+  // --- 5) Consolidação ------------------------------------------
+  // Pesos calibrados: alinhamento à vaga é o fator mais decisivo.
+  const notaBruta =
+    estrutura * 0.15 +
+    clareza * 0.15 +
+    alinhamento * 0.45 +
+    ats * 0.25;
+
+  // Bônus leve para currículos bem preenchidos (até 0.3)
+  const bonus =
+    (temResumo ? 0.1 : 0) +
+    (temExperiencia ? 0.1 : 0) +
+    (temHabilidades ? 0.05 : 0) +
+    (temMetricas ? 0.05 : 0);
+
+  const nota = Math.min(10, Math.max(0, notaBruta + bonus));
+
+  // Compatibilidade com a vaga: 0..100
+  // Combina tokens, bigrams, ATS e bônus de estrutura
+  const compatibilidadeBase =
+    alinhamentoTokens * 0.35 + // 35% sobreposição de tokens
+    bigramScore * 0.25 + // 25% sobreposição contextual
+    ats * 0.30 + // 30% termos técnicos
+    estrutura * 0.05 + // 5% completude
+    clareza * 0.05; // 5% clareza
+
+  const compatibilidade = Math.round(
+    Math.min(100, Math.max(0, compatibilidadeBase * 10)),
+  );
+
+  // --- 6) Sugestões automáticas --------------------------------
+  const melhorias: string[] = [];
+  if (!temResumo)
+    melhorias.push(
+      "Adicione um resumo profissional de 3 a 5 linhas destacando seus principais diferenciais.",
+    );
+  if (resumoStr.length > 0 && resumoStr.length < 80)
+    melhorias.push(
+      "Expanda seu resumo profissional — textos entre 80 e 800 caracteres transmitem mais autoridade.",
+    );
+  if (!temMetricas)
+    melhorias.push(
+      "Inclua indicadores quantitativos (%, R$, volume de usuários, prazos) nas descrições de experiência.",
+    );
+  if (qtdVerbos < 4)
+    melhorias.push(
+      "Use verbos de ação fortes no início de cada bullet (liderei, implementei, otimizei, reduzi).",
+    );
+  if (alinhamento < 6)
+    melhorias.push(
+      "Reforce no currículo os termos e tecnologias presentes na descrição da vaga-alvo.",
+    );
+  if (ats < 5)
+    melhorias.push(
+      "Aumente a cobertura de palavras-chave técnicas exigidas por sistemas ATS (ex.: React, SQL, Python).",
+    );
+  if (
+    Array.isArray(dadosCurriculo?.habilidades) &&
+    dadosCurriculo.habilidades.length < 6
+  )
+    melhorias.push(
+      "Amplie a lista de habilidades técnicas e comportamentais relevantes para a área.",
+    );
+  if (
+    Array.isArray(dadosCurriculo?.experiencias) &&
+    dadosCurriculo.experiencias.length < 2
+  )
+    melhorias.push(
+      "Detalhe ao menos duas vivências (profissionais, projetos pessoais ou acadêmicos) com resultados claros.",
+    );
+  if (palavrasFaltantesSet.size > 0)
+    melhorias.push(
+      `Termos relevantes da vaga ainda ausentes: ${Array.from(
+        palavrasFaltantesSet,
+      )
+        .slice(0, 5)
+        .join(", ")}.`,
+    );
+
+  // Pontos fortes
+  const pontosFortes: string[] = [];
+  if (estrutura >= 8)
+    pontosFortes.push(
+      "Estrutura completa do currículo, com seções bem definidas e profissionais.",
+    );
+  if (clareza >= 7)
+    pontosFortes.push(
+      "Clareza executiva consistente, com uso adequado de verbos de ação e indicadores.",
+    );
+  if (alinhamento >= 7)
+    pontosFortes.push(
+      "Forte alinhamento com a vaga-alvo, com termos e competências compatíveis.",
+    );
+  if (ats >= 7)
+    pontosFortes.push(
+      "Boa cobertura de palavras-chave técnicas exigidas por sistemas ATS.",
+    );
+  if (qtdVerbos >= 4)
+    pontosFortes.push(
+      "Uso consistente de verbos de ação que demonstram protagonismo e resultado.",
+    );
+  if (temMetricas)
+    pontosFortes.push(
+      "Presença de indicadores quantitativos que aumentam a credibilidade das entregas.",
+    );
+  if (bigramHits >= 3)
+    pontosFortes.push(
+      "Combinações de termos alinhadas ao contexto da vaga, demonstrando coerência técnica.",
+    );
+  if (pontosFortes.length === 0)
+    pontosFortes.push(
+      "Currículo com informações básicas legíveis e passíveis de evolução.",
+    );
+
+  return {
+    nota: Number(nota.toFixed(1)),
+    compatibilidade,
+    criterios: {
+      estruturaTextual: Number(estrutura.toFixed(1)),
+      clarezaExecutiva: Number(clareza.toFixed(1)),
+      alinhamentoVaga: Number(alinhamento.toFixed(1)),
+      palavrasChaveAts: Number(ats.toFixed(1)),
+    },
+    palavrasChaveEncontradas: Array.from(palavrasEncontradasSet).slice(0, 20),
+    palavrasChaveFaltantes: Array.from(palavrasFaltantesSet).slice(0, 20),
+    melhorias,
+    pontosFortes,
+    detalhes: {
+      tokensVaga: tokensVaga.length,
+      tokensCurrículo: tokensCurriculo.length,
+      tokensMatch: hits,
+      bigramsVaga: bigramsVaga.length,
+      bigramsCurrículo: bigramsCurriculo.size,
+      bigramsMatch: bigramHits,
+      termosTecnicosVaga: termosVagaSet.size,
+      termosTecnicosMatch: hitsAts,
+      totalExperiencias: Array.isArray(dadosCurriculo?.experiencias)
+        ? dadosCurriculo.experiencias.length
+        : 0,
+      totalHabilidades: Array.isArray(dadosCurriculo?.habilidades)
+        ? dadosCurriculo.habilidades.length
+        : 0,
+      totalFormacao: Array.isArray(dadosCurriculo?.formacao)
+        ? dadosCurriculo.formacao.length
+        : 0,
+      tamanhoResumoCaracteres: resumoStr.length,
+    },
+  };
+}
+
+/* ============================================================
+   3) RENDERIZAÇÃO DO HTML
+   ============================================================ */
+
+function escapar(s: any): string {
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function renderHtmlCurriculo(d: any): string {
+  const nome = escapar(d?.nome || "Candidato");
+  const cidade = escapar(d?.cidade || "");
+  const telefone = escapar(d?.telefone || "");
+  const email = escapar(d?.email || "");
+  const linkedin = escapar(d?.linkedin || "");
+  const github = escapar(d?.github || "");
+
+  const contatos = [cidade, telefone, email, linkedin, github]
+    .filter(Boolean)
+    .join(" &bull; ");
+
+  const experiencias = Array.isArray(d?.experiencias) ? d.experiencias : [];
+  const formacao = Array.isArray(d?.formacao) ? d.formacao : [];
+  const habilidades = Array.isArray(d?.habilidades) ? d.habilidades : [];
+  const idiomas = Array.isArray(d?.idiomas) ? d.idiomas : [];
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Currículo — ${nome}</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    color: #1F2937;
+    margin: 0;
+    padding: 0;
+    line-height: 1.45;
+    font-size: 12px;
+    background: #ffffff;
+  }
+  h1 {
+    font-size: 24px;
+    color: #1E3A8A;
+    text-align: center;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .contatos {
+    text-align: center;
+    font-size: 11px;
+    color: #4B5563;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #1E3A8A;
+    padding-bottom: 6px;
+  }
+  h2 {
+    font-size: 14px;
+    color: #1E3A8A;
+    border-bottom: 1px solid #D1D5DB;
+    padding-bottom: 3px;
+    margin: 16px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  p, li { font-size: 12px; margin: 2px 0; }
+  .linha-cabecalho { display: flex; justify-content: space-between; align-items: baseline; width: 100%; margin-bottom: 2px; }
+  .titulo-cargo { font-weight: bold; font-size: 13px; color: #111827; flex: 1; padding-right: 12px; }
+  .data-periodo { font-style: italic; color: #4B5563; font-size: 11px; white-space: nowrap; }
+  .exp-empresa { color: #2563EB; font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+  ul { margin: 4px 0 10px 18px; padding: 0; }
+  li { margin-bottom: 2px; }
+  .resumo { text-align: justify; margin: 4px 0 8px 0; }
+  .habilidades-container { font-size: 12px; color: #1F2937; word-spacing: 2px; }
+  .idioma-item { margin-bottom: 2px; }
+</style>
+</head>
+<body>
+  <h1>${nome}</h1>
+  ${contatos ? `<div class="contatos">${contatos}</div>` : ""}
+
+  ${d?.resumo ? `<h2>Resumo Profissional</h2><p class="resumo">${escapar(d.resumo)}</p>` : ""}
+
+  ${
+    experiencias.length > 0
+      ? `<h2>Experiência Profissional</h2>${experiencias
+          .map((exp: any) => {
+            const bullets = Array.isArray(exp.bullets) && exp.bullets.length > 0
+              ? exp.bullets
+              : exp.descricao
+                ? String(exp.descricao).split("\n").filter(Boolean)
+                : [];
+            return `
+              <div style="margin-bottom: 10px;">
+                <div class="linha-cabecalho">
+                  <span class="titulo-cargo">${escapar(exp.cargo || exp.titulo || "Cargo")}</span>
+                  <span class="data-periodo">${escapar(exp.periodo || "Recente")}</span>
+                </div>
+                <div class="exp-empresa">${escapar(exp.empresa || "")}</div>
+                ${
+                  bullets.length > 0
+                    ? `<ul>${bullets.map((b: string) => `<li>${escapar(b)}</li>`).join("")}</ul>`
+                    : ""
+                }
+              </div>`;
+          })
+          .join("")}`
+      : ""
+  }
+
+  ${
+    formacao.length > 0
+      ? `<h2>Formação Acadêmica</h2>${formacao
+          .map(
+            (f: any) => `
+              <div style="margin-bottom: 6px;">
+                <div class="linha-cabecalho">
+                  <span class="titulo-cargo">${escapar(f.curso || "Curso")}${
+                    f.status
+                      ? ` <span style="font-weight: normal; color: #4B5563;">(${escapar(f.status)})</span>`
+                      : ""
+                  }</span>
+                  <span class="data-periodo">${escapar(f.periodo || "Concluído")}</span>
+                </div>
+                <div style="color: #4B5563; font-size: 11px;">${escapar(f.instituicao || "")}</div>
+              </div>`,
+          )
+          .join("")}`
+      : ""
+  }
+
+  ${
+    habilidades.length > 0
+      ? `<h2>Habilidades e Competências</h2><p class="habilidades-container">${habilidades
+          .map((h: string) => escapar(h))
+          .join(" &bull; ")}</p>`
+      : ""
+  }
+
+  ${
+    idiomas.length > 0
+      ? `<h2>Idiomas</h2><ul>${idiomas
+          .map((i: any) => {
+            const nome = typeof i === "string" ? i : i.nome || i.idioma || "";
+            const nivel = typeof i === "string" ? "" : i.nivel || "";
+            return `<li class="idioma-item"><strong>${escapar(nome)}</strong>${nivel ? ` — ${escapar(nivel)}` : ""}</li>`;
+          })
+          .join("")}</ul>`
+      : ""
+  }
+</body>
+</html>`;
+}
+
+/* ============================================================
+   4) EXTRAÇÃO NORMALIZADA DOS DADOS
+   ============================================================ */
+
+export function extrairDadosCurriculo(
+  resultadoIA: any,
+  jovemData?: any,
+  vaga?: any,
+) {
+  const rawIAData =
+    resultadoIA?.curriculoEstruturado ||
+    resultadoIA?.resposta?.curriculoEstruturado ||
+    resultadoIA?.resposta?.curriculo ||
+    resultadoIA?.curriculo ||
+    {};
+
+  const nomeReal =
+    jovemData?.nome_completo ||
+    jovemData?.nome ||
+    rawIAData?.dados_pessoais?.nome ||
+    rawIAData?.dadosPessoais?.nome ||
+    "Candidato Profissional";
+
+  const dp = {
+    nome: nomeReal,
+    cidade:
+      rawIAData?.dados_pessoais?.cidade ||
+      rawIAData?.dadosPessoais?.cidade ||
+      jovemData?.cidade ||
+      "",
+    telefone:
+      rawIAData?.dados_pessoais?.telefone ||
+      rawIAData?.dadosPessoais?.telefone ||
+      jovemData?.telefone ||
+      "",
+    email:
+      rawIAData?.dados_pessoais?.email ||
+      rawIAData?.dadosPessoais?.email ||
+      jovemData?.email ||
+      "",
+    linkedin:
+      rawIAData?.dados_pessoais?.linkedin ||
+      rawIAData?.dadosPessoais?.linkedin ||
+      jovemData?.linkedin ||
+      "",
+    github:
+      rawIAData?.dados_pessoais?.github ||
+      rawIAData?.dadosPessoais?.github ||
+      jovemData?.github ||
+      "",
+  };
+
+  const resumo =
+    rawIAData?.resumo_profissional ||
+    rawIAData?.resumoProfissional ||
+    rawIAData?.resumo ||
+    "";
+
+  const expRaw = rawIAData?.experiencias || rawIAData?.experiencia || [];
+  const experiencias =
+    expRaw.length > 0
+      ? expRaw.map((e: any) => {
+          let bulletsList: string[] = [];
+          if (Array.isArray(e.bullets)) {
+            bulletsList = e.bullets.filter(Boolean);
+          } else if (Array.isArray(e.descricao)) {
+            bulletsList = e.descricao.filter(Boolean);
+          } else if (typeof e.descricao === "string" && e.descricao.trim()) {
+            bulletsList = e.descricao
+              .split("\n")
+              .map((b: string) => b.replace(/^[•\-\*]\s*/, "").trim())
+              .filter(Boolean);
+          } else if (typeof e.detalhes === "string" && e.detalhes.trim()) {
+            bulletsList = e.detalhes
+              .split("\n")
+              .map((b: string) => b.replace(/^[•\-\*]\s*/, "").trim())
+              .filter(Boolean);
+          }
+          return {
+            cargo: e.cargo || e.titulo || "Cargo Profissional",
+            empresa: e.empresa || "Empresa / Projeto",
+            periodo: e.periodo || "Recente",
+            descricao: Array.isArray(e.descricao) ? e.descricao.join("\n") : e.descricao || e.detalhes || "",
+            bullets: bulletsList,
+          };
+        })
+      : [];
+
+  const formRaw = rawIAData?.formacao || rawIAData?.formacao_academica || [];
+  const formacao =
+    formRaw.length > 0
+      ? formRaw.map((f: any) => ({
+          curso: f.curso || jovemData?.formacao || "Ensino Médio / Superior",
+          instituicao: f.instituicao || "Instituição de Ensino",
+          periodo: f.periodo || "Concluído",
+          status: f.status || "",
+        }))
+      : jovemData?.formacao
+        ? [{ curso: jovemData.formacao, instituicao: jovemData?.instituicao || "Instituição de Ensino", periodo: jovemData?.periodo_formacao || "Concluído", status: "" }]
+        : [];
+
+  const habRaw = rawIAData?.habilidades || [];
+  const habilidades = Array.isArray(habRaw) ? habRaw.filter(Boolean) : [];
+
+  const idiomasRaw = rawIAData?.idiomas || rawIAData?.idiomas_e_cursos || [];
+  const idiomas = Array.isArray(idiomasRaw)
+    ? idiomasRaw.map((item: any) =>
+        typeof item === "string"
+          ? { nome: item, nivel: "" }
+          : { nome: item.idioma || item.nome || "", nivel: item.nivel || "" },
+      )
+    : [];
+
+  return {
+    dp,
+    nome: dp.nome,
+    cidade: dp.cidade,
+    telefone: dp.telefone,
+    email: dp.email,
+    linkedin: dp.linkedin,
+    github: dp.github,
+    resumo,
+    experiencias,
+    formacao,
+    habilidades,
+    idiomas,
+  };
+}
+
+/* ============================================================
+   5) DOWNLOAD DO PDF
+   ------------------------------------------------------------
+   Correções aplicadas:
+   - Validação prévia do HTML com mensagem útil (caso vazio)
+   - Garante que o html2pdf receba SEMPRE uma string HTML
+     (passamos a string diretamente, sem depender de serialização
+      do container DOM)
+   - Fallback robusto caso o backend esteja offline
+   - Logs descritivos em cada etapa para facilitar diagnóstico
+   ============================================================ */
+
+function htmlVazio(html: string): boolean {
+  if (!html || typeof html !== "string") return true;
+  // remove tags para verificar se há conteúdo real
+  const texto = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return texto.length < 20;
+}
+
+function nomeArquivoSeguro(nome: string): string {
+  return (
+    nome
+      ?.toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9\-_]/g, "") || "profissional"
+  );
+}
+
+/**
+ * Gera o PDF local usando html2pdf.js passando a STRING HTML
+ * (esta é a correção principal do erro "O conteúdo HTML é obrigatório").
+ */
+async function gerarPdfFrontend(html: string, nomeBase: string): Promise<void> {
+  // Sanidade: html2pdf exige string não-vazia
+  if (!html || typeof html !== "string" || html.trim().length < 20) {
+    throw new Error("HTML do currículo está vazio ou inválido.");
+  }
+
+  const opt = {
+    margin: [15, 18, 15, 18],
+    filename: `curriculo-${nomeBase}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+  };
+
+  // @ts-ignore
+  // Passamos diretamente a STRING HTML para o html2pdf,
+  // evitando o problema do "HTML content is required" que
+  // acontecia quando um container DOM vazio era enviado.
+  await html2pdf().set(opt).from(html).save();
+}
+
+export async function baixarCurriculoPDF(
+  resultadoIA: any,
+  jovemData?: any,
+  vaga?: any,
+): Promise<void> {
+  const d = extrairDadosCurriculo(resultadoIA, jovemData, vaga);
+  const html = renderHtmlCurriculo(d);
+
+  if (htmlVazio(html)) {
+    throw new Error(
+      "Não foi possível gerar o conteúdo do currículo. Revise os dados e tente novamente.",
+    );
+  }
+
+  const nomeBase = nomeArquivoSeguro(d.nome);
+
+  // Tenta primeiro via backend (Puppeteer)
+  let usouBackend = false;
+  try {
+    const response = await fetch("http://localhost:3001/pdf/curriculo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html }),
+    });
+
+    if (!response.ok) {
+      const errTxt = await response.text().catch(() => "");
+      throw new Error(`Backend ${response.status}: ${errTxt.slice(0, 200)}`);
+    }
+
+    const blob = await response.blob();
+    if (blob.size < 500) {
+      throw new Error("PDF retornado pelo backend está vazio.");
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `curriculo-${nomeBase}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(url), 1500);
+    usouBackend = true;
+  } catch (errBackend) {
+    console.warn(
+      "[CIJA] Falha no PDF via backend, usando fallback local (html2pdf.js):",
+      errBackend,
+    );
+  }
+
+  // Se o backend funcionou, terminou
+  if (usouBackend) return;
+
+  // Fallback: gera o PDF no próprio navegador
+  try {
+    await gerarPdfFrontend(html, nomeBase);
+  } catch (errFront: any) {
+    console.error("[CIJA] Erro ao gerar PDF no fallback:", errFront);
+    throw new Error(
+      "Não foi possível gerar o PDF nem no backend nem localmente: " +
+        (errFront?.message || "erro desconhecido"),
+    );
+  }
+}
+
+/* ============================================================
+   6) GERAÇÃO DO DOCX
+   ============================================================ */
+
+export async function baixarCurriculoDOCX(
+  resultadoIA: any,
+  jovemData?: any,
+  vaga?: any,
+) {
+  const d = extrairDadosCurriculo(resultadoIA, jovemData, vaga);
+
+  const COR_PRIMARIA = "1E3A8A";
+  const COR_SECUNDARIA = "2563EB";
+  const COR_TEXTO = "1F2937";
+  const COR_SUAVES = "6B7280";
+  const children: any[] = [];
+
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [
+        new TextRun({
+          text: (d.nome || "Candidato").toUpperCase(),
+          bold: true,
+          size: 32,
+          color: COR_PRIMARIA,
+          font: "Calibri",
+        }),
+      ],
+    }),
+  );
+
+  children.push(
+    new Paragraph({
+      spacing: { after: 120 },
+      border: {
+        bottom: {
+          color: COR_PRIMARIA,
+          space: 4,
+          style: BorderStyle.SINGLE,
+          size: 12,
+        },
+      },
+      children: [new TextRun({ text: "" })],
+    }),
+  );
+
+  const contatoRuns: TextRun[] = [];
+  const camposContato = [d.cidade, d.telefone, d.email, d.linkedin, d.github]
+    .filter(Boolean) as string[];
+
+  camposContato.forEach((c, i) => {
+    if (i > 0) {
+      contatoRuns.push(
+        new TextRun({
+          text: "   |   ",
+          size: 18,
+          color: COR_SUAVES,
+          font: "Calibri",
+        }),
+      );
+    }
+    contatoRuns.push(
+      new TextRun({
+        text: c,
+        size: 18,
+        color: COR_TEXTO,
+        font: "Calibri",
+      }),
+    );
+  });
+
+  if (contatoRuns.length > 0) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: contatoRuns,
+      }),
+    );
+  }
+
+  if (d.resumo) {
+    children.push(criarSecaoDocx("RESUMO PROFISSIONAL", COR_PRIMARIA));
+    children.push(
+      new Paragraph({
+        spacing: { after: 180, line: 276 },
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          new TextRun({
+            text: d.resumo,
+            size: 20,
+            color: COR_TEXTO,
+            font: "Calibri",
+          }),
+        ],
+      }),
+    );
+  }
+
+  if (d.experiencias.length > 0) {
+    children.push(criarSecaoDocx("EXPERIÊNCIA PROFISSIONAL", COR_PRIMARIA));
+
+    d.experiencias.forEach((exp: any) => {
+      children.push(
+        new Paragraph({
+          spacing: { before: 80, after: 20 },
+          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          children: [
+            new TextRun({
+              text: exp.cargo,
+              bold: true,
+              size: 22,
+              color: "111827",
+              font: "Calibri",
+            }),
+            new TextRun({ text: "\t", size: 20, font: "Calibri" }),
+            new TextRun({
+              text: exp.periodo,
+              italics: true,
+              size: 19,
+              color: COR_SUAVES,
+              font: "Calibri",
+            }),
+          ],
+        }),
+      );
+
+      if (exp.empresa) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 40 },
+            children: [
+              new TextRun({
+                text: exp.empresa,
+                bold: true,
+                size: 20,
+                color: COR_SECUNDARIA,
+                font: "Calibri",
+              }),
+            ],
+          }),
+        );
+      }
+
+      const bulletsList =
+        Array.isArray(exp.bullets) && exp.bullets.length > 0
+          ? exp.bullets
+          : exp.descricao
+            ? [exp.descricao]
+            : [];
+      bulletsList.forEach((b: string) => {
+        children.push(
+          new Paragraph({
+            spacing: { after: 30, line: 260 },
+            bullet: { level: 0 },
+            children: [
+              new TextRun({
+                text: b,
+                size: 20,
+                color: COR_TEXTO,
+                font: "Calibri",
+              }),
+            ],
+          }),
+        );
+      });
+    });
+  }
+
+  if (d.formacao.length > 0) {
+    children.push(criarSecaoDocx("FORMAÇÃO ACADÊMICA", COR_PRIMARIA));
+
+    d.formacao.forEach((form: any) => {
+      children.push(
+        new Paragraph({
+          spacing: { before: 60, after: 20 },
+          tabStops: [{ type: "right", position: convertInchesToTwip(6.5) }],
+          children: [
+            new TextRun({
+              text: form.curso,
+              bold: true,
+              size: 21,
+              color: "111827",
+              font: "Calibri",
+            }),
+            form.status
+              ? new TextRun({
+                  text: ` (${form.status})`,
+                  size: 19,
+                  color: COR_SUAVES,
+                  font: "Calibri",
+                })
+              : new TextRun({ text: "", size: 19, font: "Calibri" }),
+            new TextRun({ text: "\t", size: 19, font: "Calibri" }),
+            new TextRun({
+              text: form.periodo,
+              italics: true,
+              size: 19,
+              color: COR_SUAVES,
+              font: "Calibri",
+            }),
+          ],
+        }),
+      );
+
+      if (form.instituicao) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 80 },
+            children: [
+              new TextRun({
+                text: form.instituicao,
+                size: 19,
+                color: "4B5563",
+                font: "Calibri",
+              }),
+            ],
+          }),
+        );
+      }
+    });
+  }
+
+  if (d.habilidades.length > 0) {
+    children.push(criarSecaoDocx("HABILIDADES E COMPETÊNCIAS", COR_PRIMARIA));
+
+    const porLinha = 4;
+    for (let i = 0; i < d.habilidades.length; i += porLinha) {
+      const bloco = d.habilidades.slice(i, i + porLinha);
+      const runs: TextRun[] = [];
+      bloco.forEach((hab: string, idx: number) => {
+        if (idx > 0) {
+          runs.push(
+            new TextRun({
+              text: "    •    ",
+              size: 20,
+              color: COR_SUAVES,
+              font: "Calibri",
+            }),
+          );
+        }
+        runs.push(
+          new TextRun({
+            text: hab,
+            size: 20,
+            bold: true,
+            color: COR_TEXTO,
+            font: "Calibri",
+          }),
+        );
+      });
+
+      children.push(
+        new Paragraph({
+          spacing: { after: 50, line: 260 },
+          children: runs,
+        }),
+      );
+    }
+  }
+
+  if (d.idiomas.length > 0) {
+    children.push(criarSecaoDocx("IDIOMAS", COR_PRIMARIA));
+
+    d.idiomas.forEach((idioma: any) => {
+      children.push(
+        new Paragraph({
+          spacing: { after: 40, line: 260 },
+          bullet: { level: 0 },
+          children: [
+            new TextRun({
+              text: idioma.nome || idioma.idioma,
+              bold: true,
+              size: 20,
+              color: COR_TEXTO,
+              font: "Calibri",
+            }),
+            idioma.nivel
+              ? new TextRun({
+                  text: ` — ${idioma.nivel}`,
+                  size: 20,
+                  color: COR_SUAVES,
+                  font: "Calibri",
+                })
+              : new TextRun({ text: "", size: 20, font: "Calibri" }),
+          ],
+        }),
+      );
+    });
+  }
+
+  const doc = new Document({
+    creator: "CIJA",
+    title: `Currículo — ${d.nome}`,
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(0.7),
+              bottom: convertInchesToTwip(0.7),
+              left: convertInchesToTwip(0.8),
+              right: convertInchesToTwip(0.8),
+            },
+          },
+        },
+        children,
+      },
+    ],
+  });
+
+  try {
+    const blob = await Packer.toBlob(doc);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `curriculo-${nomeArquivoSeguro(d.nome)}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(url), 1500);
+  } catch (error: unknown) {
+    console.error("Erro ao gerar DOCX:", error);
+    throw new Error("Falha ao gerar DOCX");
+  }
+}
+
+export function criarSecaoDocx(titulo: string, cor: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 200, after: 80 },
+    border: {
+      bottom: { color: "E5E7EB", space: 4, style: BorderStyle.SINGLE, size: 6 },
+    },
+    children: [
+      new TextRun({
+        text: titulo,
+        bold: true,
+        size: 22,
+        color: cor,
+        font: "Calibri",
+      }),
+    ],
+  });
+}

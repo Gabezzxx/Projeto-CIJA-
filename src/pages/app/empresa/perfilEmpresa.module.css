@@ -5,11 +5,56 @@
   color: #e5e7eb;
   display: flex;
 }
+
+/* Nova classe para quando for visão pública (Sem Sidebar) */
+.pagePublica {
+  min-height: 100vh;
+  background: #050307;
+  color: #e5e7eb;
+  display: block;
+}
+
 .main {
   flex: 1;
   margin-left: 260px;
   width: calc(100% - 260px);
   background: #050307;
+  padding-bottom: 40px;
+}
+
+/* Nova classe para o conteúdo público esticar corretamente */
+.mainPublico {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #050307;
+  padding-bottom: 40px;
+}
+
+/* ===== TOPO EXCLUSIVO DO JOVEM ===== */
+.topBarPublica {
+  padding: 24px 24px 0;
+}
+
+.btnVoltar {
+  background: #1e1633;
+  color: #c4b5fd;
+  border: 1px solid #2a1f4d;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  span{
+     padding: 0 auto;
+     
+  }
+}
+
+.btnVoltar:hover {
+  background: #7c3aed;
+  color: white;
 }
 
 /* ===== HERO ===== */
@@ -75,20 +120,26 @@
   background: #0f0a1f;
   display: block;
 }
-.avatarWrap::after {
-  content: "";
+.editAvatar {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  background: #1a1330;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: #7c3aed;
   border: 2px solid #0f0a1f;
   border-radius: 50%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/%3E%3C/svg%3E");
-  background-size: 12px;
-  background-repeat: no-repeat;
-  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.editAvatar:hover {
+  background: #6d28d9;
+}
+.editAvatar input {
+  display: none;
 }
 
 .heroInfo h1 {
@@ -126,86 +177,66 @@
   display: inline-block;
 }
 .heroDesc {
-  color: #9d99ac;
-  font-size: 13px;
-  line-height: 1.5;
-  margin-top: 12px;
-  max-width: 420px;
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 8px 0 0;
+  max-width: 500px;
 }
 
-/* ===== GRID ===== */
+/* ===== GRID CONTAINERS ===== */
 .container {
-  display: grid;
-  grid-template-columns: 1.65fr 1fr;
-  gap: 20px;
-  padding: 20px 24px 40px;
-  max-width: 1440px;
+  display: flex;
+  gap: 24px;
+  padding: 24px;
 }
-.leftCol,
-.rightCol {
+.leftCol {
+  flex: 1.6;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+}
+.rightCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.fullCol {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* ===== CARDS ===== */
 .card {
-  background: #0d091a;
-  border: 1px solid #1f1733;
-  border-radius: 14px;
-  padding: 20px;
+  background: #0b0714;
+  border: 1px solid #160f24;
+  border-radius: 16px;
+  padding: 24px;
 }
 .cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 .cardHeader h2 {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
-}
-
-.editAvatar {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 30px;
-  height: 30px;
-  background: #1a1330;
-  border: 2px solid #0f0a1f;
-  border-radius: 50%;
-  display: flex;
-  z-index: 99999;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.editAvatar:hover {
-  background: #7c3aed;
-  transform: scale(1.1);
-}
-.editAvatar input {
-  display: none;
-}
-.cardHeader h2 svg {
-  color: #7c3aed;
-  width: 16px;
-  height: 16px;
 }
 .btnEdit {
-  background: #1a1330;
-  border: 1px solid #2d1f4d;
+  background: transparent;
+  border: 1px solid #3b2a66;
   color: #a78bfa;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -214,15 +245,16 @@
   transition: all 0.2s;
 }
 .btnEdit:hover {
-  background: #241b40;
+  background: #1e1433;
   border-color: #7c3aed;
+  color: #fff;
 }
 
 /* ===== INFO GRID ===== */
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 .infoItem {
   display: flex;
@@ -230,88 +262,39 @@
   align-items: flex-start;
 }
 .infoIcon {
-  width: 36px;
-  height: 36px;
-  background: #1a1330;
+  width: 32px;
+  height: 32px;
+  background: #160f29;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.infoIcon svg {
-  width: 16px;
-  height: 16px;
-  color: #a78bfa;
-}
 .infoItem label {
   display: block;
   font-size: 12px;
-  color: #8b87a0;
-  margin-bottom: 3px;
-  font-weight: 400;
+  color: #6b7280;
+  margin-bottom: 2px;
 }
 .infoItem p {
-  margin: 0;
-  color: #fff;
   font-size: 14px;
-  font-weight: 500;
+  color: #e5e7eb;
+  margin: 0;
 }
 
-/* ===== STATS ===== */
-.statsList {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.statItem {
-  background: #080510;
-  border: 1px solid #1a1425;
-  border-radius: 10px;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 78px;
-}
-.statItem strong {
-  display: block;
-  font-size: 26px;
-  font-weight: 700;
-  color: #a78bfa;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.statItem span {
-  font-size: 12px;
-  color: #8b87a0;
-}
-.statIcon {
-  width: 36px;
-  height: 36px;
-  background: #1a1330;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.statIcon svg {
-  width: 18px;
-  height: 18px;
-  color: #a78bfa;
-}
-
-/* ===== ATIVIDADE ===== */
+/* ===== ATIVIDADES RECENTES ===== */
 .activityList {
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 .activityItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid #1a1425;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #140d21;
 }
 .activityItem:last-child {
   border-bottom: none;
@@ -326,154 +309,125 @@
   flex-shrink: 0;
 }
 .actIcon.vaga {
-  background: #064e3b;
-}
-.actIcon.vaga svg {
-  color: #10b981;
+  background: #1e3a8a;
 }
 .actIcon.user {
-  background: #4c1d95;
-}
-.actIcon.user svg {
-  color: #a78bfa;
+  background: #065f46;
 }
 .actIcon.msg {
-  background: #78350f;
+  background: #581c87;
 }
-.actIcon.msg svg {
-  color: #f59e0b;
-}
+
 .actContent {
   flex: 1;
-  min-width: 0;
 }
 .actContent strong {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
   font-weight: 500;
-  margin-bottom: 2px;
 }
 .actContent p {
-  margin: 0;
-  font-size: 12px;
-  color: #8b87a0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 2px 0 0;
 }
 .actTime {
   font-size: 12px;
   color: #6b7280;
-  white-space: nowrap;
-  margin-left: 12px;
 }
 .linkBtn {
-  width: 100%;
-  background: none;
+  background: transparent;
   border: none;
   color: #7c3aed;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 12px 0 0;
   cursor: pointer;
-  text-align: center;
+  padding: 0;
+  margin-top: 14px;
+  display: inline-block;
 }
 .linkBtn:hover {
   text-decoration: underline;
 }
 
-/* ===== AÇÕES ===== */
-.actionsList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ===== RESUMO E STATS ===== */
+.statsList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
-.actionsList button {
-  width: 100%;
-  background: #080510;
-  border: 1px solid #1a1425;
-  border-radius: 10px;
-  padding: 12px 14px;
+.statItem {
+  background: #110b1e;
+  border: 1px solid #1c1230;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
 }
-.actionsList button:hover {
-  background: #120c1f;
-  border-color: #2d1f4d;
-  transform: translateX(2px);
+.statItem strong {
+  display: block;
+  font-size: 24px;
+  color: #fff;
 }
-.actionIcon {
-  width: 36px;
-  height: 36px;
-  background: #1a1330;
+.statItem span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.statIcon {
+  width: 32px;
+  height: 32px;
+  background: rgba(124, 58, 237, 0.1);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
-.actionIcon svg {
-  width: 18px;
-  height: 18px;
-  color: #a78bfa;
+
+/* ===== AÇÕES RÁPIDAS ===== */
+.actionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.actionsList button > div:nth-child(2) {
+.actionsList button {
+  width: 100%;
+  background: #110b1e;
+  border: 1px solid #1c1230;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.actionsList button:hover {
+  background: #160e26;
+  border-color: #3b2569;
+}
+.actionIcon {
+  width: 36px;
+  height: 36px;
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.actionsList button div:nth-child(2) {
   flex: 1;
-  min-width: 0;
 }
 .actionsList button strong {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
-  font-weight: 500;
-  margin-bottom: 2px;
 }
 .actionsList button span {
+  display: block;
   font-size: 12px;
-  color: #8b87a0;
-}
-.actionsList button > svg:last-child {
-  width: 16px;
-  height: 16px;
-  color: #4b5563;
-  flex-shrink: 0;
-}
-
-/* ===== RESPONSIVO ===== */
-@media (max-width: 1200px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
-  .infoGrid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-@media (max-width: 992px) {
-  .main {
-    margin-left: 0;
-    width: 100%;
-  }
-  .hero {
-    margin: 16px;
-  }
-  .container {
-    padding: 16px;
-  }
-}
-@media (max-width: 640px) {
-  .infoGrid {
-    grid-template-columns: 1fr;
-  }
-  .statsList {
-    grid-template-columns: 1fr;
-  }
-  .heroLeft {
-    flex-direction: column;
-    text-align: center;
-  }
+  color: #6b7280;
+  margin-top: 2px;
 }

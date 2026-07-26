@@ -115,7 +115,7 @@
     rgba(124, 58, 237, 0.12);
 }
 
-button {
+.submitButton {
   height: 52px;
 
   border: none;
@@ -139,11 +139,11 @@ button {
   transition: 0.2s;
 }
 
-button:hover {
+.submitButton:hover {
   transform: translateY(-2px);
 }
 
-button:disabled {
+.submitButtonon:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }

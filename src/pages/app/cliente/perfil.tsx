@@ -146,6 +146,12 @@ export default function Perfil() {
     setCandidaturasCount(cCount || 0);
   };
 
+
+  // funcao pra ve se user ta online
+  async function userIsLoggedIn(){
+    const user_id = localStorage.getItem('user');
+     return user_id !== null
+  }
   const loadProfile = async (userId: string, userEmail: string) => {
     try {
       const [p, c] = await Promise.all([
@@ -338,7 +344,8 @@ export default function Perfil() {
               ) : (
                 <div className={styles.avatarFallback}>{initials}</div>
               )}
-              <span className={styles.online} />
+             {!userIsLoggedIn && (
+              <span className={styles.online} />)}
               {!visualizacaoEmpresa && (
                 <label className={styles.cam}>
                   <input
@@ -348,16 +355,15 @@ export default function Perfil() {
                     onChange={uploadAvatar}
                   />
                   <svg
-                    width="16"
-                    height="16"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="white"
                     strokeWidth="2"
                   >
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <path d="M21 15l-5-5L5 21" />
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </label>
               )}
@@ -838,22 +844,17 @@ export default function Perfil() {
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
                 {visualizacaoEmpresa && (
-                  <p>
-                    Nehnum RG,CPF informado pelo candidato
-                  </p>
+                  <p>Nehnum RG,CPF informado pelo candidato</p>
                 )}
-                 {!visualizacaoEmpresa && (
-                  <p>
-                    Adicione seus documentos aqui
-                  </p>
-                )}
+                {!visualizacaoEmpresa && <p>Adicione seus documentos aqui</p>}
               </div>
             </section>
           )}
         </div>
 
         {visualizacaoEmpresa && (
-          <button className={styles.voltar} onClick={() => navigate(-1)}>
+          <button style={{background: "#1e1633",color:" #c4b5fd",border: "1px solid #2a1f4d;"
+          }} className={styles.voltar} onClick={() => navigate(-1)}>
             Voltar
           </button>
         )}

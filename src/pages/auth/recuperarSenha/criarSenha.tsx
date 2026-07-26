@@ -191,7 +191,7 @@ export default function CriarNovaSenha() {
                 </button>
               </div>
 
-              <button type="submit" disabled={loading}>
+              <button type="submit" disabled={loading} className={styles.submitSenha}>
                 {loading ? "Salvando..." : "Atualizar senha"}
               </button>
             </form>

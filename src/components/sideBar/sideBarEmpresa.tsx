@@ -91,7 +91,6 @@ export const SidebarEmpresa: React.FC = () => {
 
   const menuItems = [
     { label: "Dashboard", path: "/menuEmpresa", icon: <DashboardIcon /> },
-    { label: "Criar vaga", path: "/vagasEmpresa/nova", icon: <PlusIcon /> },
     {
       label: "Ver candidatos",
       path: "/candidatosEmpresa",

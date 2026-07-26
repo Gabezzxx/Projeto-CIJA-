@@ -209,15 +209,26 @@ export default function ConfirmarEmail() {
 
   const realizarConfirmacaoNoBanco = async () => {
     try {
+      const {
+        data: { user: authedUser },
+      } = await supabase.auth.getUser();
+
+      const userId = authedUser?.id;
+      if (!userId) {
+        throw new Error("Sessão inválida após verificação do código.");
+      }
+
       const tabela =
         tipoUsuario === "jovem_aprendiz" ? "jovem_aprendiz" : "empresa";
+      const idCol =
+        tipoUsuario === "jovem_aprendiz" ? "id_ja" : "id_em";
 
       const { error } = await supabase
         .from(tabela)
         .update({
           email_confirmado: true,
         })
-        .eq("email", emailAlvo);
+        .eq(idCol, userId);
 
       if (error) throw error;
 

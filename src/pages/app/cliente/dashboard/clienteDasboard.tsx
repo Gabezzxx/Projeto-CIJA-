@@ -570,7 +570,7 @@ const Dashboard: React.FC = () => {
                   <div
                     key={vaga.id}
                     className={styles.vagaCard}
-                    onClick={() => navigate(`/vagas/${vaga.id}`)}
+                    onClick={() => navigate(`/vaga-selecionada/${vaga.id}`)}
                   >
                     <div className={styles.vagaContent}>
                       <div className={styles.vagaHeader}>
@@ -609,7 +609,7 @@ const Dashboard: React.FC = () => {
                         className={styles.btnCandidatar}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/vagas/${vaga.id}`);
+                          navigate(`/vaga-selecionada/${vaga.id}`);
                         }}
                       >
                         Ver detalhes

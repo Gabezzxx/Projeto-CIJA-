@@ -5,8 +5,8 @@ import Cadastro from "./pages/auth/cadastro/cadastroCliente";
 import ClientDashboard from "pages/app/cliente/dashboard/clienteDasboard";
 import RecuperarSenha from "./pages/auth/recuperarSenha/recuperarSenhaSendEmail";
 import CriarNovaSenha from "pages/auth/recuperarSenha/criarSenha";
-import Curriculo from "pages/app/cliente/curriculo";
-import Vagas from "pages/app/cliente/vagas";
+import Vagas from "pages/app/cliente/vagas/vagas";
+import VagaSelecionada from "pages/app/cliente/vagas/vagaSelecionada";
 import Mensagens from "pages/app/cliente/mensagens";
 import Perfil from "pages/app/cliente/perfil";
 import LoginEmpresa from "pages/auth/login/loginEmpresa";
@@ -22,6 +22,8 @@ import Page404 from "pages/security/page404";
 import Ajuda from "routes/ajudaSystem";
 import Favoritos from "pages/app/cliente/favoritos";
 import Candidaturas from "pages/app/cliente/candidaturas";
+import RevisarCurriculo from "pages/app/cliente/vagas/revisarCurriculo";
+
 function App() {
   return (
     <AnimatePresence mode="wait">
@@ -60,20 +62,20 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/curriculo"
-          element={
-            <ProtectedRoute tipoEsperado="jovem_aprendiz">
-              <Curriculo />
-            </ProtectedRoute>
-          }
-        />
 
         <Route
           path="/vagas"
           element={
             <ProtectedRoute tipoEsperado="jovem_aprendiz">
               <Vagas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vaga-selecionada/:id"
+          element={
+            <ProtectedRoute tipoEsperado="jovem_aprendiz">
+              <VagaSelecionada />
             </ProtectedRoute>
           }
         />
@@ -91,6 +93,14 @@ function App() {
           element={
             <ProtectedRoute tipoEsperado="jovem_aprendiz">
               <Favoritos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/revisar-curriculo/:id"
+          element={
+            <ProtectedRoute tipoEsperado="jovem_aprendiz">
+              <RevisarCurriculo />
             </ProtectedRoute>
           }
         />
@@ -139,6 +149,15 @@ function App() {
           path="/perfilEmpresa"
           element={
             <ProtectedRoute tipoEsperado="empresa">
+              <PerfilEmpresa />
+            </ProtectedRoute>
+          }
+        />
+        {/*  ver perfil empresa */}
+        <Route
+          path="/perfilEmpresa/:id_em?"
+          element={
+            <ProtectedRoute tipoEsperado="jovem_aprendiz">
               <PerfilEmpresa />
             </ProtectedRoute>
           }

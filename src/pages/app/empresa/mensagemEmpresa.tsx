@@ -215,7 +215,7 @@ const MensagemEmpresa: React.FC = () => {
 
           <div
             className={styles.backButton}
-            onClick={() => navigate("/menuEmpresa")}
+            onClick={() => navigate(-1)}
           >
             {" "}
             <ArrowLeftIcon />

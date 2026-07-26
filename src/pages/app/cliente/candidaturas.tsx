@@ -3,6 +3,7 @@ import { Sidebar } from "../../../components/sideBar/sideBar";
 import styles from "./candidaturas.module.css";
 import { supabase } from "../../../supabaseClient";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+import { useNavigate } from "react-router-dom";
 
 interface Empresa {
   id_em: string;
@@ -65,6 +66,9 @@ const Candidaturas: React.FC = () => {
   const [candidaturas, setCandidaturas] = useState<Candidatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [vagas, setVagas] = useState<any[]>([]);
+
   useDocumentTitle("CIJA - Minhas Candidaturas");
 
   useEffect(() => {
@@ -134,8 +138,9 @@ const Candidaturas: React.FC = () => {
     const empresasMap = new Map<string, Empresa>();
     empresasData?.forEach((e: Empresa) => empresasMap.set(e.id_em, e));
 
-    const candidaturasCompletas = candData.map((c: any) => {
+    const candidaturasCompletas = candData.map((c: any, vagas) => {
       const vaga = vagasMap.get(c.id_vaga);
+      setVagas(vaga);
       const empresa = vaga ? empresasMap.get(vaga.id_em) : null;
 
       return {
@@ -164,7 +169,11 @@ const Candidaturas: React.FC = () => {
   }
 
   async function descandidatar(idCand: string) {
-    if (!window.confirm("Tem certeza que deseja cancelar esta candidatura?"))
+    if (
+      !window.confirm(
+        "Tem certeza que deseja cancelar sua candidatura para esta vaga?",
+      )
+    )
       return;
 
     const { error } = await supabase
@@ -176,8 +185,9 @@ const Candidaturas: React.FC = () => {
       console.error("Erro ao cancelar:", error);
       alert("Erro ao cancelar candidatura");
     } else {
-      setCandidaturas((prev) =>
-        prev.filter((c) => c.id_candidatura !== idCand),
+      setCandidaturas(
+        (prev) => prev.filter((y) => y.id_candidatura !== idCand), // pega lista mais atualizada,contendo a vaga que usuario quer
+        //mais atualizada e remove ela se for diferente das outras
       );
     }
   }
@@ -213,9 +223,12 @@ const Candidaturas: React.FC = () => {
               const nomeEmpresa =
                 cand.vaga?.empresa?.nome || "Empresa Parceira";
               const letraInicial = nomeEmpresa.charAt(0).toUpperCase();
-
               return (
-                <div key={cand.id_candidatura} className={styles.card}>
+                <div
+                  key={cand.id_candidatura}
+                  className={styles.card}
+                  onClick={() => navigate(`/vaga-selecionada/${cand.id_vaga}`)}
+                >
                   <div className={styles.cardTop}>
                     <div className={styles.empresaInfo}>
                       <div className={styles.companyLogo}>

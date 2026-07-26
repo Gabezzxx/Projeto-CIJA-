@@ -139,7 +139,7 @@ export default function Ajuda() {
             />
           </div>
 
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} className={styles.submitButton} >
             {loading ? "Enviando..." : "Enviar Solicitação"}
           </button>
         </form>

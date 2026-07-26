@@ -1,8 +1,9 @@
-import { Sidebar } from "../../../components/sideBar/sideBar";
+import { Sidebar } from "../../../../components/sideBar/sideBar";
 import React, { useEffect, useState, useMemo } from "react";
 import styles from "./vagas.module.css";
-import { supabase } from "../../../supabaseClient";
+import { supabase } from "../../../../supabaseClient";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
+import { useNavigate } from "react-router-dom";
 
 interface Empresa {
   id_em: string;
@@ -101,7 +102,7 @@ const Vagas: React.FC = () => {
   const [minhasCandidaturas, setMinhasCandidaturas] = useState<string[]>([]);
   const [favoritos, setFavoritos] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
-
+  const navigate = useNavigate();
   const [showFiltros, setShowFiltros] = useState(false);
   const [sortBy, setSortBy] = useState<"recentes" | "salario">("recentes");
   const [filtros, setFiltros] = useState<Filtros>({
@@ -207,6 +208,7 @@ const Vagas: React.FC = () => {
     }));
 
     setVagasOriginais(vagasFormatadas);
+
     setLoading(false);
   }
 
@@ -282,31 +284,7 @@ const Vagas: React.FC = () => {
     filtros.salarioMin > 0 ||
     filtros.salarioMax < 20000;
 
-  async function candidatarSe(idVag: string, tituloVaga: string) {
-    if (!userId) {
-      showToast("Você precisa estar logado para se candidatar.", "error");
-      return;
-    }
-
-    const { error } = await supabase.from("candidaturas").insert([
-      {
-        id_vaga: idVag,
-        id_candidato: userId,
-      },
-    ]);
-
-    if (error) {
-      if (error.code === "23505") {
-        showToast("Você já se candidatou a esta vaga!", "error");
-      } else {
-        showToast("Erro ao enviar candidatura", "error");
-        console.error(error);
-      }
-    } else {
-      showToast(`Candidatura enviada para ${tituloVaga}!`, "success");
-      setMinhasCandidaturas((prev) => [...prev, idVag]);
-    }
-  }
+ 
 
   async function toggleFavorito(idVag: string) {
     if (!userId) {
@@ -426,8 +404,12 @@ const Vagas: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  <p className={styles.descricao}>{vaga.descricao}</p>
+                  <p className={styles.descricao}>
+                    {vaga.descricao.length > 50
+                      ? `${vaga.descricao.slice(0, 50)}...`
+                      : vaga.descricao}
+                    {/*  mantem limite de 50 caracteres, se passar ele recorta ate 50 so */}
+                  </p>
 
                   <div className={styles.details}>
                     <div className={styles.detailItem}>
@@ -453,20 +435,15 @@ const Vagas: React.FC = () => {
                   </div>
 
                   <div className={styles.cardFooter}>
-                    <button className={styles.detailBtn}>Ver detalhes</button>
                     <button
-                      className={
-                        jaCandidatado
-                          ? `${styles.botao} ${styles.candidatado}`
-                          : styles.botao
-                      }
                       onClick={() =>
-                        !jaCandidatado && candidatarSe(vaga.id_vag, vaga.titulo)
+                        navigate(`/vaga-selecionada/${vaga.id_vag}`)
                       }
-                      disabled={jaCandidatado}
+                      className={styles.detailBtn}
                     >
-                      {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+                      Ver mais detalhes
                     </button>
+                  
                     <button
                       className={`${styles.bookmarkBtn} ${vaga.is_favorita ? styles.bookmarked : ""}`}
                       onClick={() => toggleFavorito(vaga.id_vag)}

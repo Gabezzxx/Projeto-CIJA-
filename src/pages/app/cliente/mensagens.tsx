@@ -152,8 +152,10 @@ const Mensagens: React.FC = () => {
     return () => clearInterval(interval);
   }, [carregarConversas, userId]);
 
+  const irParaPerfil = (id_em: string) => {
+    navigate(`/perfilEmpresa/${id_em}`);
+  };
   const conversaAtual = conversas.find((c) => c.id_em === ativa);
-
   return (
     <div className={styles.container}>
       {!ativa ? (
@@ -193,7 +195,11 @@ const Mensagens: React.FC = () => {
       ) : (
         <div className={styles.chat}>
           <div className={styles.top}>
-            <button onClick={() => setAtiva(null)}>
+            {/* Botão de voltar no mobile */}
+            <button
+              className={styles.btnVoltarMobile}
+              onClick={() => setAtiva(null)}
+            >
               <svg
                 width="20"
                 height="20"
@@ -207,19 +213,23 @@ const Mensagens: React.FC = () => {
               </svg>
             </button>
 
-            <div className={styles.chatPerfil}>
+            <div
+              className={styles.perfilClicavel}
+              onClick={() =>
+                conversaAtual?.id_em && irParaPerfil(conversaAtual.id_em)
+              }
+            >
               <img
                 src={conversaAtual?.avatar_url || "/avatar.png"}
                 alt={conversaAtual?.nome}
                 className={styles.chatAvatar}
               />
-              <div className={styles.chatInfo}>
+              <div className={styles.perfilInfo}>
                 <h3>{conversaAtual?.nome}</h3>
-                <span>Empresa</span>
+                <span className={styles.verPerfil}>Ver perfil</span>
               </div>
             </div>
           </div>
-
           <div className={styles.msgs}>
             {mensagens.map((m) => (
               <div

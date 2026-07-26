@@ -3,7 +3,7 @@ import { Sidebar } from "../../../components/sideBar/sideBar";
 import styles from "./favoritos.module.css";
 import { supabase } from "../../../supabaseClient";
 import { useDocumentTitle } from "Hooks/useDocumentTitle";
-
+import { useNavigate } from "react-router-dom";
 interface Empresa {
   id_em: string;
   nome: string;
@@ -74,7 +74,7 @@ const Favoritos: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [minhasCandidaturas, setMinhasCandidaturas] = useState<string[]>([]);
   useDocumentTitle("CIJA - Vagas Favoritas");
-
+  const navigate=  useNavigate();
   useEffect(() => {
     async function inicializar() {
       const {
@@ -275,7 +275,7 @@ const Favoritos: React.FC = () => {
                   </div>
 
                   <div className={styles.cardFooter}>
-                    <button className={styles.detailBtn}>Ver detalhes</button>
+                    <button onClick={() => navigate(`/vaga-selecionada/${vaga.id_vag}`)} className={styles.detailBtn}>Ver detalhes</button>
                     <button
                       className={
                         jaCandidatado

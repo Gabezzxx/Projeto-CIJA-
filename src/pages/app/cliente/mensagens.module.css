@@ -8,7 +8,7 @@
   position: relative;
 }
 
-/* ================= LISTA ================= */
+/* ================= LISTA (SIDEBAR) ================= */
 .sidebar {
   width: 360px;
   background: #131129;
@@ -28,6 +28,9 @@
 }
 
 .backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 14px 24px;
   color: #a855f7;
   font-weight: 600;
@@ -111,7 +114,7 @@
   color: #71717a;
 }
 
-/* ================= CHAT ================= */
+/* ================= CHAT AREA ================= */
 .chat {
   flex: 1;
   display: flex;
@@ -132,7 +135,8 @@
   box-sizing: border-box;
 }
 
-.top button {
+/* Botão de voltar no mobile */
+.btnVoltarMobile {
   background: transparent;
   border: none;
   color: #a855f7;
@@ -140,7 +144,7 @@
   padding: 8px;
   border-radius: 8px;
   transition: background 0.2s;
-  display: flex;
+  display: none; /* Escondido no desktop */
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
@@ -148,16 +152,30 @@
   height: 36px;
 }
 
-.top button:hover {
+.btnVoltarMobile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.btnVoltarMobile:hover {
   background: #1b1733;
 }
 
-.chatPerfil {
+/* Bloco clicável idêntico ao do painel da empresa */
+.perfilClicavel {
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 10px;
+  transition: background 0.2s ease;
   flex: 1;
   min-width: 0;
+}
+
+.perfilClicavel:hover {
+  background: #1b1733;
 }
 
 .chatAvatar {
@@ -169,15 +187,14 @@
   flex-shrink: 0;
 }
 
-.chatInfo {
+.perfilInfo {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  flex: 1;
 }
 
-.chatInfo h3 {
+.perfilInfo h3 {
   font-size: 16px;
   font-weight: 600;
   color: #ffffff;
@@ -187,12 +204,14 @@
   text-overflow: ellipsis;
 }
 
-.chatInfo span {
+.verPerfil {
   font-size: 12px;
-  color: #94a3b8;
+  color: #a855f7;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-/* MENSAGENS */
+/* ================= MENSAGENS ================= */
 .msgs {
   flex: 1;
   padding: 20px;
@@ -268,7 +287,7 @@
   border-bottom-right-radius: 4px;
 }
 
-/* INPUT */
+/* ================= INPUT AREA ================= */
 .input {
   display: flex;
   align-items: center;
@@ -326,7 +345,7 @@
   transform: translateY(0);
 }
 
-/* ================= RESPONSIVO ================= */
+/* ================= RESPONSIVO (TABLETS) ================= */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -335,6 +354,15 @@
     top: 0;
     height: 100%;
     z-index: 10;
+  }
+
+  /* Controla o comportamento de alternância de telas no mobile */
+  .sidebarHiddenMobile {
+    display: none;
+  }
+
+  .btnVoltarMobile {
+    display: flex; /* Exibe o botão de voltar no chat ativo */
   }
 
   .empty {
@@ -364,6 +392,7 @@
   }
 }
 
+/* ================= RESPONSIVO (CELULARES) ================= */
 @media (max-width: 480px) {
   .header {
     padding: 16px;
@@ -382,9 +411,11 @@
   .top {
     padding: 10px 12px;
     min-height: 56px;
+    gap: 10px;
   }
 
-  .top button {
+  .top button,
+  .btnVoltarMobile {
     width: 32px;
     height: 32px;
   }
@@ -394,7 +425,7 @@
     height: 36px;
   }
 
-  .chatInfo h3 {
+  .perfilInfo h3 {
     font-size: 15px;
   }
 

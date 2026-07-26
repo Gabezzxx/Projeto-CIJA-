@@ -3,7 +3,7 @@ import styles from "./Sidebar.module.css";
 import cijaLogo from "../../assets/logo2.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
-
+import { SearchIcon } from "lucide-react";
 type MenuItem = {
   label: string;
   path: string;
@@ -129,40 +129,58 @@ export const Sidebar: React.FC = () => {
 
   const carregarNaoLidas = useCallback(async () => {
     if (!userId) return;
-    const { count } = await supabase
+    
+    const { count, error } = await supabase
       .from("mensagens")
       .select("*", { count: "exact", head: true })
       .eq("id_ja", userId)
       .eq("enviado_por_jovem", false)
       .eq("lida", false);
-    setNaoLidas(count || 0);
-  }, [userId]);
 
-  useEffect(() => {
-    if (userId) {
-      carregarNaoLidas();
-      const i = setInterval(carregarNaoLidas, 5000);
-      return () => clearInterval(i);
+    if (!error) {
+      setNaoLidas(count || 0);
     }
   }, [userId]);
 
+ 
   useEffect(() => {
-    setIsOpen(false);
-  }, [location.pathname]);
+    if (!userId) return;
 
+    // Busca inicial ao carregar o componente
+    carregarNaoLidas();
+
+    // Cria um canal de escuta em tempo real para a tabela de mensagens deste usuário
+    const channel = supabase
+      .channel(`sidebar-mensagens-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Escuta inserções, atualizações e exclusões
+          schema: "public",
+          table: "mensagens",
+          filter: `id_ja=eq.${userId}`,
+        },
+        () => {
+          // Atualiza a contagem automaticamente assim que houver mudança no banco
+          carregarNaoLidas();
+        }
+      )
+      .subscribe();
+
+    //  fecha o canal quando o componente for desmontado
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, carregarNaoLidas]);
   const menuItems: MenuItem[] = [
     { label: "Dashboard", path: "/clientDashboard", icon: <HomeIcon /> },
-    { label: "Minhas Vagas", path: "/vagas", icon: <BriefcaseIcon /> },
+    { label: "Vagas", path: "/vagas", icon: < SearchIcon /> },
     {
       label: "Candidaturas",
       path: "/candidaturas",
       icon: <ClipboardCheckIcon />,
     },
-    {
-      label: "Revisar Currículo",
-      path: "/curriculo",
-      icon: <ClipboardCheckIcon />,
-    },
+
     { label: "Favoritos", path: "/favoritos", icon: <HeartIcon /> },
     {
       label: "Mensagens",

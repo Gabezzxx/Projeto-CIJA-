@@ -138,19 +138,6 @@ export default function CadastroEmpresa() {
     const emailLower = form.email.trim().toLowerCase();
 
     try {
-      const { data: existing } = await supabase
-        .from("empresa")
-        .select("email")
-        .eq("email", emailLower)
-        .maybeSingle();
-
-      if (existing) {
-        setGlobalMessage("Este e-mail corporativo já está cadastrado.");
-        triggerError();
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email: emailLower,
         password: form.senha,
@@ -158,6 +145,13 @@ export default function CadastroEmpresa() {
       });
 
       if (error || !data.user) throw error;
+
+      if (data.user.identities && data.user.identities.length === 0) {
+        setGlobalMessage("Não foi possível concluir o cadastro. Tente novamente em alguns minutos.");
+        triggerError();
+        setLoading(false);
+        return;
+      }
 
       const { error: insertError } = await supabase.from("empresa").insert([
         {

@@ -216,7 +216,8 @@ export const VagasEmpresa: React.FC = () => {
                       {new Date(vaga.data_publicada).toLocaleDateString("pt-BR")}
                     </span>
                   </div>
-                  <p className={styles.descricaoText}>{vaga.descricao}</p>
+                  <p 
+                  className={styles.descricaoText}>{vaga.descricao}</p>
                   <div className={styles.localizacaoInfo}>
                 <span>{vaga.cidade} - {vaga.estado}</span>
                 </div>  
@@ -256,7 +257,7 @@ export const VagasEmpresa: React.FC = () => {
                       value={descricao} 
                       onChange={(e) => setDescricao(e.target.value)} 
                       rows={6} 
-                      maxLength={2000} 
+                      maxLength={3000} 
                       required 
                     />
                     

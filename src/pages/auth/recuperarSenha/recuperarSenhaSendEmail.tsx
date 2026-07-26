@@ -50,24 +50,10 @@ export default function RecuperarSenha() {
     setLoading(true);
 
     try {
-      const { data: userExists, error: rpcError } = await supabase.rpc(
-        "check_email_exists",
-        {
-          p_email: email.trim(),
-        },
-      );
+      await supabase.rpc("check_email_exists", {
+        p_email: email.trim(),
+      });
 
-      if (rpcError) {
-        throw new Error("Erro ao verificar email no servidor.");
-      }
-
-      if (!userExists) {
-        setError("Email não encontrado em nosso sistema.");
-        triggerErrorAnimation();
-        return;
-      }
-
-      // 🔥 IMPORTANTE: fluxo correto Vercel + Supabase
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
         {
@@ -82,7 +68,9 @@ export default function RecuperarSenha() {
       setSentOnce(true);
       setSuccess(true);
     } catch (e: any) {
-      setError(e.message || "Erro inesperado. Tente novamente.");
+      setError(
+        "Se o e-mail informado estiver cadastrado, enviaremos um link de recuperação. Verifique também a caixa de spam.",
+      );
       triggerErrorAnimation();
     } finally {
       setLoading(false);

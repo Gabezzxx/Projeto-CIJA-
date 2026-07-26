@@ -172,17 +172,6 @@ export default function CadastroCliente() {
     setLoading(true);
     const emailLower = form.email.trim().toLowerCase();
     try {
-      const { data: existing } = await supabase
-        .from("jovem_aprendiz")
-        .select("email")
-        .eq("email", emailLower)
-        .maybeSingle();
-      if (existing) {
-        setGlobalMessage("Este e-mail já está cadastrado.");
-        triggerError();
-        setLoading(false);
-        return;
-      }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailLower,
         password: form.senha,
@@ -191,7 +180,7 @@ export default function CadastroCliente() {
       if (authError || !authData?.user)
         throw authError || new Error("Erro ao criar conta.");
       if (authData.user.identities && authData.user.identities.length === 0) {
-        setGlobalMessage("Este e-mail já foi solicitado recentemente.");
+        setGlobalMessage("Não foi possível concluir o cadastro. Tente novamente em alguns minutos.");
         triggerError();
         setLoading(false);
         return;

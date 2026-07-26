@@ -18,7 +18,11 @@ import {
   XCircle, // X erro
   AlertCircle, // Aviso
 } from "lucide-react";
+import { StringList } from "@google/genai";
+import { BooleanLiteral } from "typescript";
 
+
+          //
 export default function Login() {
   const navigate = useNavigate();
   useDocumentTitle("CIJA - Login Jovem Aprendiz");
@@ -37,6 +41,7 @@ export default function Login() {
   const [empresas, setEmpresas] = useState(0);
   const [suporte, setSuporte] = useState(0);
 
+  
   useEffect(() => {
     const animateValue = (
       setter: React.Dispatch<React.SetStateAction<number>>,
@@ -96,25 +101,30 @@ export default function Login() {
     setLoading(true);
     const emailFormatado = email.trim().toLowerCase();
     try {
-      const { data: cliente, error: clienteError } = await supabase
-        .from("jovem_aprendiz")
-        .select("email_confirmado")
-        .eq("email", emailFormatado)
-        .maybeSingle();
-      if (clienteError) throw clienteError;
-      if (!cliente)
-        throw new Error(
-          "Esta conta não é de Jovem Aprendiz. Caso seja uma Empresa, utilize a Área Empresarial.",
-        );
-
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: emailFormatado,
           password: senha,
         });
       if (authError || !authData.user)
-        throw new Error("Email ou senha inválidos.");
+        throw new Error("E-mail ou senha inválidos.");
 
+      const { data: cliente, error: clienteError } = await supabase
+        .from("jovem_aprendiz")
+        .select("email_confirmado")
+        .eq("id_ja", authData.user.id)
+        .maybeSingle();
+      if (clienteError) throw clienteError;
+      if (!cliente) {
+        await supabase.auth.signOut();
+        throw new Error("E-mail ou senha inválidos.");
+      }
+      
+
+      
+
+  
+   
       const emailConfirmado =
         cliente.email_confirmado === true ||
         cliente.email_confirmado === "true";
